@@ -90,6 +90,7 @@ class RedirectController extends Controller
                                 'is_robot' => $userDetails['is_robot'],
                                 'user_agent' => $userDetails['user_agent'],
                             ];
+                            return $payload;
                             $detailsCreate = ClickDetail::create($payload);
                             if ($detailsCreate) {
                                 $url = 'https://www.google.com';

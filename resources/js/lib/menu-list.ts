@@ -14,6 +14,7 @@ import {
     IoShareSocialOutline,
 } from "react-icons/io5";
 import { SiPaloaltonetworks } from "react-icons/si";
+import { Clipboard } from "lucide-react";
 type Submenu = {
     href: string;
     label: string;
@@ -163,7 +164,15 @@ export function getMenuList(
             active: pathname === "/ dashboard/sources",
             icon: IoShareSocialOutline,
             submenus: [],
-        });
+        },
+            {
+                href: "/dashboard/url-tester",
+                label: "Tester",
+                active: pathname === "/url-tester",
+                icon: Clipboard,
+                submenus: [],
+            },);
+
     }
 
     return menuItems;

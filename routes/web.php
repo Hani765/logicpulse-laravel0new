@@ -16,6 +16,7 @@ use App\Http\Controllers\Authenticated\TrackersController;
 use App\Http\Controllers\Authenticated\UserController;
 use App\Http\Controllers\Authenticated\OnBordingController;
 use App\Http\Controllers\Authenticated\RoutesController;
+use App\Http\Controllers\Authenticated\UrlTesterController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::apiResources([
             "/settings/account" => AccountsController::class,
             "/dashboard/sources" => SourceController::class,
+            "/dashboard/url-tester" => UrlTesterController::class,
         ]);
     });
     Route::middleware(['checkRole:administrator,admin'])->group(function () {
