@@ -1,0 +1,2 @@
+import{j as e}from"./app-BOQZNA3r.js";import{C as r,a as s,b as i,f as n}from"./credenza-BSXAgJ2N.js";import{P as t}from"./index-DpeUaN6f.js";import"./dialog-BcfKVCAb.js";import"./index-CMPCDGMv.js";import"./drawer-D-7W2o-9.js";function x({rowCurrent:o}){return e.jsxs(r,{children:[e.jsx(s,{className:"w-full",children:e.jsxs("p",{className:"w-full flex gap-4 items-center hover:bg-slate-50 justify-center py-1.5 rounded-md ",children:["View",e.jsx(t,{})]})}),e.jsx(i,{children:e.jsx(n,{children:"Close"})})]})}export{x as ViewDomain};
+//# sourceMappingURL=View-BUAjjl2V.js.map

@@ -1,0 +1,2 @@
+import{j as e,Y as r,C as a,m as t,aq as i,ar as l}from"./app-BOQZNA3r.js";import{k as n}from"./index-BxJA8sjD.js";function x({error:s}){return e.jsxs("div",{className:"flex justify-center items-center h-screen",children:[e.jsx(r,{title:s}),e.jsx(a,{className:"w-full sm:max-w-lg",children:e.jsxs(t,{children:[e.jsxs(i,{className:"w-full flex items-center justify-center",children:[e.jsx(n,{})," Error"]}),e.jsx(l,{children:s})]})})]})}export{x as default};
+//# sourceMappingURL=index-DJaMDU9Y.js.map
