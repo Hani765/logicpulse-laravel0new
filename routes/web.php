@@ -6,6 +6,7 @@ use App\Http\Controllers\Authenticated\FetchController;
 use App\Http\Controllers\Authenticated\NetworkController;
 use App\Http\Controllers\Authenticated\NotificationsController;
 use App\Http\Controllers\Authenticated\OffersController;
+use App\Http\Controllers\Authenticated\MarketPlaceController;
 use App\Http\Controllers\Authenticated\RedirectController;
 use App\Http\Controllers\Authenticated\SessionController;
 use App\Http\Controllers\Authenticated\Settings\AccountsController;
@@ -65,6 +66,7 @@ Route::middleware('auth')->group(function () {
 
     Route::apiResources([
         "/dashboard/offers" => OffersController::class,
+        "/dashboard/market-place" => MarketPlaceController::class,
         "/onboarding" => OnBordingController::class,
         "/notifications" => NotificationsController::class,
         "/sessions" => SessionController::class,
@@ -87,4 +89,6 @@ Route::middleware('auth')->group(function () {
 Route::apiResources([
     "/landing/hero" => HeroController::class,
 ]);
+Route::get('/fetch-public-offers', [MarketPlaceController::class, 'fetchOffers']);
+
 require __DIR__ . '/auth.php';

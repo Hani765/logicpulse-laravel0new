@@ -270,3 +270,6 @@
         transform: translateX(-100%);
     }
 }
+scroll-hidden::-webkit-scrollbar {
+    display: none;
+}

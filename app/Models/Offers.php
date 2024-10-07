@@ -48,6 +48,10 @@ class Offers extends Model
     {
         return json_decode($value, true);
     }
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
 
 
 }
