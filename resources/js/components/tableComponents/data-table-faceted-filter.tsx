@@ -19,20 +19,40 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { useEffect, useState } from "react";
 
 interface DataTableFacetedFilterProps<TData, TValue> {
-    column?: Column<TData, TValue>;
-    title?: string;
-    options: any[];
+    endPoint: string;
+    onUrlChange: any;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
-    column,
-    title,
-    options,
+    endPoint,
+    onUrlChange,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-    const selectedValues = new Set(column?.getFilterValue() as string[]);
+    const [filterValue, setFilterValue] = useState("");
+    const options = [
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+        { value: "pending", label: "Pending" },
+        { value: "paused", label: "Paused" },
+    ];
+    const handleQueryChange = (query: string) => {
+        // Create a URLSearchParams object to manipulate the URL's query parameters
+        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
 
+        // Set or update the 'page' parameter
+        urlParams.set("status", query.toString());
+
+        // Rebuild the full URL (ensure there's only one '?')
+        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
+
+        // Update the URL
+        onUrlChange(updatedUrl);
+    };
+    useEffect(() => {
+        handleQueryChange(filterValue);
+    }, [filterValue]);
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -42,8 +62,8 @@ export function DataTableFacetedFilter<TData, TValue>({
                     className="h-8 border-dashed"
                 >
                     <PlusCircledIcon className="mr-2 size-4" />
-                    {title}
-                    {selectedValues?.size > 0 && (
+                    Status
+                    {filterValue !== "" && (
                         <>
                             <Separator
                                 orientation="vertical"
@@ -51,69 +71,31 @@ export function DataTableFacetedFilter<TData, TValue>({
                             />
                             <Badge
                                 variant="secondary"
-                                className="rounded-sm px-1 font-normal lg:hidden"
+                                className="rounded-sm px-1 font-normal"
                             >
-                                {selectedValues.size}
+                                {filterValue}
                             </Badge>
-                            <div className="hidden space-x-1 lg:flex">
-                                {selectedValues.size > 2 ? (
-                                    <Badge
-                                        variant="secondary"
-                                        className="rounded-sm px-1 font-normal"
-                                    >
-                                        {selectedValues.size} selected
-                                    </Badge>
-                                ) : (
-                                    options
-                                        .filter((option) =>
-                                            selectedValues.has(option.value),
-                                        )
-                                        .map((option) => (
-                                            <Badge
-                                                variant="secondary"
-                                                key={option.value}
-                                                className="rounded-sm px-1 font-normal"
-                                            >
-                                                {option.label}
-                                            </Badge>
-                                        ))
-                                )}
-                            </div>
                         </>
                     )}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[12.5rem] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder={title} />
+                    <CommandInput placeholder="Status" />
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup className="max-h-[18.75rem] overflow-y-auto overflow-x-hidden">
                             {options.map((option) => {
-                                const isSelected = selectedValues.has(
-                                    option.value,
-                                );
-
+                                const isSelected = filterValue === option.value;
                                 return (
                                     <CommandItem
                                         key={option.value}
                                         onSelect={() => {
                                             if (isSelected) {
-                                                selectedValues.delete(
-                                                    option.value,
-                                                );
+                                                setFilterValue("");
                                             } else {
-                                                selectedValues.add(
-                                                    option.value,
-                                                );
+                                                setFilterValue(option.value);
                                             }
-                                            const filterValues =
-                                                Array.from(selectedValues);
-                                            column?.setFilterValue(
-                                                filterValues.length
-                                                    ? filterValues
-                                                    : undefined,
-                                            );
                                         }}
                                     >
                                         <div
@@ -129,35 +111,17 @@ export function DataTableFacetedFilter<TData, TValue>({
                                                 aria-hidden="true"
                                             />
                                         </div>
-                                        {option.icon && (
-                                            <option.icon
-                                                className="mr-2 size-4 text-muted-foreground"
-                                                aria-hidden="true"
-                                            />
-                                        )}
                                         <span>{option.label}</span>
-                                        {option.withCount &&
-                                            column
-                                                ?.getFacetedUniqueValues()
-                                                ?.get(option.value) && (
-                                                <span className="ml-auto flex size-4 items-center justify-center font-mono text-xs">
-                                                    {column
-                                                        ?.getFacetedUniqueValues()
-                                                        .get(option.value)}
-                                                </span>
-                                            )}
                                     </CommandItem>
                                 );
                             })}
                         </CommandGroup>
-                        {selectedValues.size > 0 && (
+                        {filterValue != "" && (
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>
                                     <CommandItem
-                                        onSelect={() =>
-                                            column?.setFilterValue(undefined)
-                                        }
+                                        onSelect={() => setFilterValue("")}
                                         className="justify-center text-center"
                                     >
                                         Clear filters

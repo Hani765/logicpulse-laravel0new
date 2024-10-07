@@ -38,6 +38,7 @@ class DomainController extends Controller
             $perPage = $request->input('per_page', 50);
             $page = $request->input('page', 1);
             $q = $request->input('q', '');
+            $status = $request->input('status', '');
 
             $roleToColumnMap = [
                 'administrator' => '',
@@ -53,7 +54,10 @@ class DomainController extends Controller
             $domainsQuery = $this->getDomainsQuery($roleToColumnMap[$user->role]);
 
             if ($q) {
-                $domainsQuery->where('value', 'like', "%$q%");
+                $domainsQuery->where('name', 'like', "%$q%");
+            }
+            if ($status) {
+                $domainsQuery->where('status', 'like', "%$status%");
             }
 
             $domains = $domainsQuery->paginate($perPage, ['*'], 'page', $page);

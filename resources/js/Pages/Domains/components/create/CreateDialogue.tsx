@@ -14,9 +14,13 @@ export default function Create() {
     return (
         <Credenza>
             <CredenzaTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-fit "
+                >
                     <PlusIcon className="mr-2 size-4" aria-hidden="true" />
-                    Add New Offers
+                    Add New Domain
                 </Button>
             </CredenzaTrigger>
             <CredenzaContent

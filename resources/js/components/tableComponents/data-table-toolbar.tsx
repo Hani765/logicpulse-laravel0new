@@ -12,98 +12,69 @@ import { DownloadIcon, PlusIcon } from "lucide-react";
 import { DeleteTasksDialog } from "./delete-tasks-dialog";
 import { exportTableToCSV } from "@/lib/export";
 import { DataTableViewOptions } from "./columnToggle";
+import { debounce } from "lodash";
 
 interface DataTableToolbarProps<TData>
     extends React.HTMLAttributes<HTMLDivElement> {
     table: Table<TData>;
-    filterFields?: any[];
-    Create: any;
+    Create?: any;
+    onUrlChange: any;
+    endPoint: string;
 }
 
 export function DataTableToolbar<TData>({
     table,
-    filterFields = [],
     Create,
+    onUrlChange,
+    endPoint,
     className,
     ...props
 }: DataTableToolbarProps<TData>) {
     const isFiltered = table.getState().columnFilters.length > 0;
 
-    // Memoize computation of searchableColumns and filterableColumns
-    const { searchableColumns, filterableColumns } = React.useMemo(() => {
-        return {
-            searchableColumns: filterFields.filter((field) => !field.options),
-            filterableColumns: filterFields.filter((field) => field.options),
-        };
-    }, [filterFields]);
+    const handleQueryChange = (query: string) => {
+        // Create a URLSearchParams object to manipulate the URL's query parameters
+        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
 
+        // Set or update the 'page' parameter
+        urlParams.set("q", query.toString());
+
+        // Rebuild the full URL (ensure there's only one '?')
+        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
+
+        // Update the URL
+        onUrlChange(updatedUrl);
+    };
+    const debouncedFetch = React.useCallback(
+        debounce((value: string) => {
+            handleQueryChange(value);
+        }, 500), // 500ms delay
+        [],
+    );
     return (
         <div
             className={cn(
-                "flex w-full items-center justify-between space-x-2 overflow-auto p-1",
+                "flex w-full sm:items-center sm:justify-between space-y-1 sm:space-y-0 sm:space-x-2 overflow-auto p-1 flex-col sm:flex-row",
                 className,
             )}
             {...props}
         >
-            <div className="flex flex-1 items-center space-x-2">
-                {searchableColumns.length > 0 &&
-                    searchableColumns.map(
-                        (column) =>
-                            table.getColumn(
-                                column.value ? String(column.value) : "",
-                            ) && (
-                                <Input
-                                    key={String(column.value)}
-                                    placeholder={column.placeholder}
-                                    value={
-                                        (table
-                                            .getColumn(String(column.value))
-                                            ?.getFilterValue() as string) ?? ""
-                                    }
-                                    onChange={(event) =>
-                                        table
-                                            .getColumn(String(column.value))
-                                            ?.setFilterValue(event.target.value)
-                                    }
-                                    className="h-8 w-40 lg:w-64"
-                                />
-                            ),
-                    )}
-                {filterableColumns.length > 0 &&
-                    filterableColumns.map(
-                        (column) =>
-                            table.getColumn(
-                                column.value ? String(column.value) : "",
-                            ) && (
-                                <DataTableFacetedFilter
-                                    key={String(column.value)}
-                                    column={table.getColumn(
-                                        column.value
-                                            ? String(column.value)
-                                            : "",
-                                    )}
-                                    title={column.label}
-                                    options={column.options ?? []}
-                                />
-                            ),
-                    )}
-                {isFiltered && (
-                    <Button
-                        aria-label="Reset filters"
-                        variant="ghost"
-                        className="h-8 px-2 lg:px-3"
-                        onClick={() => table.resetColumnFilters()}
-                    >
-                        Reset
-                        <Cross2Icon
-                            className="ml-2 size-4"
-                            aria-hidden="true"
-                        />
-                    </Button>
-                )}
+            <div className="flex flex-1 sm:items-center space-y-1 sm:space-y-0 w-full flex-col sm:flex-row-reverse">
+                {Create && <Create />}
+                <div className="flex items-center w-full sm:space-x-1">
+                    <Input
+                        className="h-8 w-full sm:w-64 bg-white rounded flex-1"
+                        placeholder="search by name.."
+                        onChange={(e) => debouncedFetch(e.target.value)}
+                    />
+
+                    <DataTableFacetedFilter
+                        endPoint={endPoint}
+                        onUrlChange={onUrlChange}
+                    />
+                </div>
             </div>
-            <div className="flex items-center gap-2">
-                <Create />
+            <div className="flex gap-2">
                 {table.getFilteredSelectedRowModel().rows.length > 0 ? (
                     <DeleteTasksDialog
                         tasks={table
@@ -117,7 +88,7 @@ export function DataTableToolbar<TData>({
                     size="sm"
                     onClick={() =>
                         exportTableToCSV(table, {
-                            filename: "tasks",
+                            filename: "Domain-records",
                             excludeColumns: ["select", "actions"],
                         })
                     }

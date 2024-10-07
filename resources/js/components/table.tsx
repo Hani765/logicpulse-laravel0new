@@ -17,11 +17,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table-shadcn";
-import { Children, useState } from "react";
-import { DataTableViewOptions } from "./tableComponents/columnToggle";
+import { useState } from "react";
 import { DataTablePagination } from "./tableComponents/Pagination";
-import { ReloadIcon } from "@radix-ui/react-icons";
-import { DataTableAdvancedFacetedFilter } from "./tableComponents/data-table-advanced-faceted-filter";
+import { DotFilledIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { DataTableToolbar } from "./tableComponents/data-table-toolbar";
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -51,7 +49,6 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
         {},
     );
-
     const table = useReactTable({
         data,
         columns,
@@ -72,7 +69,12 @@ export function DataTable<TData, TValue>({
     return (
         <div className="relative">
             <div className="flex items-center py-3">
-                <DataTableToolbar table={table} Create={Create} />
+                <DataTableToolbar
+                    table={table}
+                    Create={Create}
+                    endPoint={endPoint}
+                    onUrlChange={onUrlChange}
+                />
             </div>
 
             <div className="rounded-md border shadow my-2 w-full dark:bg-gray-900 bg-white">

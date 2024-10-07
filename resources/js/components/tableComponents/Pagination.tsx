@@ -5,7 +5,6 @@ import {
     DoubleArrowRightIcon,
 } from "@radix-ui/react-icons";
 import { Table } from "@tanstack/react-table";
-import MultiDel from "./multiDel";
 import PerPage from "./PerPage";
 import { Button } from "../ui/button";
 import { TasksTableFloatingBar } from "./tasks-table-floating-bar";
@@ -53,6 +52,9 @@ export function DataTablePagination<TData>({
             <div className="flex items-center gap-2 mr-8">
                 <PerPage onUrlChange={onUrlChange} endPoint={endPoint} />
                 <div className="flex items-center space-x-2">
+                    <p className="text-sm">
+                        Page {pagination.current_page} of {pagination.last_page}
+                    </p>
                     {/* First page button */}
                     <Button
                         className="hidden h-8 w-8 p-0 lg:flex"

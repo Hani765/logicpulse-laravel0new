@@ -14,7 +14,7 @@ interface dataType {
 }
 export default function Index({ auth }: PageProps) {
     const role = auth.user.role;
-    const [url, setUrl] = useState(`/dashboard/fetch/domains?per_page=50`);
+    const [url, setUrl] = useState(`/dashboard/fetch/domains`);
     const { data, isLoading, error } = useFetch<dataType>(url);
     return (
         <Authenticated user={auth.user}>

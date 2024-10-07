@@ -40,7 +40,7 @@ export default function Index({ auth }: { auth: any }) {
         debounce((value: string) => {
             setUrl(`/fetch-users?q=${value}`);
         }, 500), // 500ms delay
-        []
+        [],
     );
 
     useEffect(() => {
@@ -64,11 +64,9 @@ export default function Index({ auth }: { auth: any }) {
             {data && (
                 <DataTable
                     data={data.data} // safely access user data
-                    isSearchable={true}
                     endPoint={endPoint}
                     columns={Columns(role)} // assuming Columns returns columns based on role
                     pagination={data.pagination} // safely access pagination data
-                    role={role}
                     isLoading={isLoading}
                 />
             )}
