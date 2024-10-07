@@ -25,6 +25,11 @@ class DomainController extends Controller
 {
     public function index(Request $request): Response
     {
+        return Inertia::render('Domains/index');
+    }
+
+    public function fetchDomains(Request $request)
+    {
         try {
             $metricsService = new MetricsService();
             $today = $metricsService->getTodayDateInUserTimezone();
@@ -86,7 +91,7 @@ class DomainController extends Controller
                 'prev_page' => $domains->currentPage() > 1 ? $domains->currentPage() - 1 : null,
             ];
 
-            return Inertia::render('Domains/index', [
+            return response()->json([
                 'data' => $response,
                 'pagination' => $paginationData,
             ]);
@@ -97,7 +102,6 @@ class DomainController extends Controller
             ], 500);
         }
     }
-
     private function getDomainsQuery(string $clickColumn)
     {
         $user = Auth::user();

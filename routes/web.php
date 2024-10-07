@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/fetch/all-users', [FetchController::class, 'fetchFilterAllUsers']);
         Route::get('/fetch/trackers', [FetchController::class, 'fetchFilterTrackers']);
         Route::get('/fetch/networks', [FetchController::class, 'fetchFilterNetworks']);
+        Route::get('/dashboard/fetch/domains', [DomainController::class, 'fetchDomains']);
     });
 
     Route::middleware(['checkRole:administrator,admin,manager'])->group(function () {
@@ -84,7 +85,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/click-conversion-count', [ClickController::class, 'getClickCount']);
 
     Route::get('/update/NotifcationSettings', [ProfileController::class, 'updateNotificationSettings']);
-
 });
 Route::apiResources([
     "/landing/hero" => HeroController::class,

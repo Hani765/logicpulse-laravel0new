@@ -17,40 +17,39 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table-shadcn";
-import { useState } from "react";
+import { Children, useState } from "react";
 import { DataTableViewOptions } from "./tableComponents/columnToggle";
 import { DataTablePagination } from "./tableComponents/Pagination";
 import { ReloadIcon } from "@radix-ui/react-icons";
+import { DataTableAdvancedFacetedFilter } from "./tableComponents/data-table-advanced-faceted-filter";
+import { DataTableToolbar } from "./tableComponents/data-table-toolbar";
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
-    pagination: any;
-    isSearchable?: boolean;
-    isClickFilterable?: boolean;
+    pagination?: any;
     isLoading?: boolean;
-    isStatusFilterable?: boolean;
     endPoint: string;
-    role?: string;
-    roleOptions?: string[];
+    onUrlChange?: any;
+    tableViewOption?: boolean;
+    isPagination?: true;
+    Create?: any;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     pagination,
-    isSearchable,
     endPoint,
-    roleOptions,
-    isStatusFilterable,
     isLoading,
-    isClickFilterable,
-    role,
+    onUrlChange,
+    isPagination,
+    Create,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [rowSelection, setRowSelection] = useState({});
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-        {}
+        {},
     );
 
     const table = useReactTable({
@@ -70,12 +69,12 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     });
-
     return (
         <div className="relative">
             <div className="flex items-center py-3">
-                <DataTableViewOptions table={table} />
+                <DataTableToolbar table={table} Create={Create} />
             </div>
+
             <div className="rounded-md border shadow my-2 w-full dark:bg-gray-900 bg-white">
                 <Table>
                     <TableHeader>
@@ -92,7 +91,7 @@ export function DataTable<TData, TValue>({
                                                 : flexRender(
                                                       header.column.columnDef
                                                           .header,
-                                                      header.getContext()
+                                                      header.getContext(),
                                                   )}
                                         </TableHead>
                                     );
@@ -120,7 +119,7 @@ export function DataTable<TData, TValue>({
                                                         {flexRender(
                                                             cell.column
                                                                 .columnDef.cell,
-                                                            cell.getContext()
+                                                            cell.getContext(),
                                                         )}
                                                     </TableCell>
                                                 ))}
@@ -153,13 +152,16 @@ export function DataTable<TData, TValue>({
                     </TableBody>
                 </Table>
             </div>
-            <div className="pt-3">
-                <DataTablePagination
-                    table={table}
-                    pagination={pagination}
-                    endPoint={endPoint}
-                />
-            </div>
+            {isPagination && (
+                <div className="pt-3">
+                    <DataTablePagination
+                        table={table}
+                        pagination={pagination}
+                        endPoint={endPoint}
+                        onUrlChange={onUrlChange}
+                    />
+                </div>
+            )}
         </div>
     );
 }

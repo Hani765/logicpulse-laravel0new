@@ -12,6 +12,7 @@ export default function useFetch<T>(url: string): FetchResult<T> {
     const [isLoading, setIsLoading] = React.useState(true);
 
     const fetchData = async (url: string) => {
+        setIsLoading(true);
         try {
             const response = await fetch(url);
             if (!response.ok) {
@@ -28,7 +29,7 @@ export default function useFetch<T>(url: string): FetchResult<T> {
 
     React.useEffect(() => {
         fetchData(url);
-    }, [url, ]);
+    }, [url]);
 
     return { data, error, isLoading };
 }

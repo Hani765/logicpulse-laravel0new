@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Dropdown from "./dropdown";
 import { DomainsType } from "@/types";
+import { DataTableColumnHeader } from "@/components/tableComponents/data-table-column-header";
+import { formatDate } from "@/lib/utils";
 
 export const Columns = (): ColumnDef<DomainsType>[] => [
     {
@@ -33,117 +35,53 @@ export const Columns = (): ColumnDef<DomainsType>[] => [
     },
     {
         accessorKey: "id",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    ID
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="ID" />
+        ),
     },
     {
         accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Domain Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Domain Name" />
+        ),
     },
     {
         accessorKey: "clicks",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Clicks
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Clicks" />
+        ),
     },
     {
         accessorKey: "conversions",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Conversions
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Conversions" />
+        ),
     },
     {
         accessorKey: "cvr",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    CVR
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="CVR" />
+        ),
     },
     {
         accessorKey: "created_at",
-        header: "Create At",
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("created_at"));
-            const formated = date.toLocaleDateString();
-            return <div className="font-medium">{formated}</div>;
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Created At" />
+        ),
+        cell: ({ cell }) => formatDate(cell.getValue() as Date),
     },
     {
         accessorKey: "updated_at",
-        header: "Updated At",
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("updated_at"));
-            const formated = date.toLocaleDateString();
-            return <div className="font-medium">{formated}</div>;
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Updated At" />
+        ),
+        cell: ({ cell }) => formatDate(cell.getValue() as Date),
     },
     {
         accessorKey: "status",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Status
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Status" />
+        ),
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
             return (
@@ -158,7 +96,6 @@ export const Columns = (): ColumnDef<DomainsType>[] => [
         },
     },
     {
-        header: "Actions",
         id: "actions",
         cell: ({ row }) => {
             const rowCurrent = row.original;

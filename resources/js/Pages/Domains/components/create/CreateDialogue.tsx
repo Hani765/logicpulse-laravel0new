@@ -8,28 +8,29 @@ import {
     CredenzaTitle,
     CredenzaTrigger,
 } from "@/components/ui/credenza";
+import { PlusIcon } from "lucide-react";
 
 export default function Create() {
     return (
-        <div className="bg-white border border-gray-200 dark:border-gray-700 dark:bg-gray-900 w-full shadow-sm flex justify-between items-center p-2 rounded">
-            <h3 className="font-semibold">Domains</h3>
-            <Credenza>
-                <CredenzaTrigger asChild>
-                    <Button variant="gooeyRight">Create new</Button>
-                </CredenzaTrigger>
-                <CredenzaContent
-                    className="sm:max-w-[425px]"
-                    onInteractOutside={(e: any) => e.preventDefault()}
-                >
-                    <CredenzaHeader>
-                        <CredenzaTitle>Add Domain</CredenzaTitle>
-                        <CredenzaDescription>
-                            Add a new domain to access offers via custom domain.
-                        </CredenzaDescription>
-                    </CredenzaHeader>
-                    <Form />
-                </CredenzaContent>
-            </Credenza>
-        </div>
+        <Credenza>
+            <CredenzaTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <PlusIcon className="mr-2 size-4" aria-hidden="true" />
+                    Add New Offers
+                </Button>
+            </CredenzaTrigger>
+            <CredenzaContent
+                className="sm:max-w-[425px]"
+                onInteractOutside={(e: any) => e.preventDefault()}
+            >
+                <CredenzaHeader>
+                    <CredenzaTitle>Add Domain</CredenzaTitle>
+                    <CredenzaDescription>
+                        Add a new domain to access offers via custom domain.
+                    </CredenzaDescription>
+                </CredenzaHeader>
+                <Form />
+            </CredenzaContent>
+        </Credenza>
     );
 }
