@@ -1,5 +1,6 @@
-import { AxiosInstance } from 'axios';
-import { route as ziggyRoute } from 'ziggy-js';
+import { AxiosInstance } from "axios";
+import Pusher from "pusher-js";
+import { route as ziggyRoute } from "ziggy-js";
 
 declare global {
     interface Window {
@@ -7,4 +8,13 @@ declare global {
     }
 
     var route: typeof ziggyRoute;
+}
+declare global {
+    interface Window {
+        Pusher: typeof Pusher;
+        Echo: Echo;
+    }
+}
+export interface NotificationEvent {
+    message: string;
 }

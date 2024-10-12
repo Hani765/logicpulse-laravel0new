@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Authenticated;
 
+use App\Events\NotificationSent;
 use App\Http\Controllers\Controller;
 use App\Models\Click;
 use App\Models\ClickDetail;
@@ -43,7 +44,7 @@ class RedirectController extends Controller
                 $source = '';
             }
             // Fetch user data
-            $user = User::select('role', 'manager_id', 'admin_id')
+            $user = User::select('role', 'manager_id', 'admin_id', 'username')
                 ->where('unique_id', $userId)
                 ->where('status', 'active')
                 ->first();
@@ -90,12 +91,16 @@ class RedirectController extends Controller
                                 'is_robot' => $userDetails['is_robot'],
                                 'user_agent' => $userDetails['user_agent'],
                             ];
-                            return $payload;
                             $detailsCreate = ClickDetail::create($payload);
+                            $notificationData = [
+                                'user_id' => '102',
+                                'message' => $user->username . ' received a new notification on ' . $offer->offer_name,
+                            ];
+                            NotificationSent::dispatch($notificationData);
                             if ($detailsCreate) {
                                 $url = 'https://www.google.com';
                                 $offerUrl = $url . '?' . $tracker->param . '=' . $create->id;
-                                return redirect()->away($offerUrl);
+                                return 'send';
                             } else {
                                 $error = 'Something went wrong! Please try again later or contact with service provider.';
                             }

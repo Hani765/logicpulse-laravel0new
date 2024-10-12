@@ -31,7 +31,7 @@ export default function PerPage({
     };
 
     return (
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-col sm:flex-row">
             <p className="text-sm font-medium">Rows per page</p>
             <Select onValueChange={(value) => handlePageChange(Number(value))}>
                 <SelectTrigger className="h-6 w-[100px]">

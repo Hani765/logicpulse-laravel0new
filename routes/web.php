@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Authenticated\ClickController;
+use App\Http\Controllers\Authenticated\Dashboard\DashboardMessage;
 use App\Http\Controllers\Authenticated\DomainController;
 use App\Http\Controllers\Authenticated\FetchController;
 use App\Http\Controllers\Authenticated\NetworkController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Authenticated\UserController;
 use App\Http\Controllers\Authenticated\OnBordingController;
 use App\Http\Controllers\Authenticated\RoutesController;
 use App\Http\Controllers\Authenticated\UrlTesterController;
+use App\Http\Controllers\Authenticated\Dashboard\MessageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -85,10 +87,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/click-conversion-count', [ClickController::class, 'getClickCount']);
 
     Route::get('/update/NotifcationSettings', [ProfileController::class, 'updateNotificationSettings']);
+    Route::get('/get/message', [DashboardMessage::class, 'index']);
 });
-Route::apiResources([
-    "/landing/hero" => HeroController::class,
-]);
 Route::get('/fetch-public-offers', [MarketPlaceController::class, 'fetchOffers']);
 
 require __DIR__ . '/auth.php';

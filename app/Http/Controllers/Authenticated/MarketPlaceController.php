@@ -70,7 +70,7 @@ class MarketPlaceController extends Controller
             $response[] = [
                 'id' => $offer->id,
                 'unique_id' => $offer->unique_id,
-                'image' => $offer->image ? $offer->image : '/assets/default-image.jpg',
+                'image' => '/assets/default-image.jpg',
                 'title' => $offer->offer_name,
                 'category' => $offer->category ? $offer->category->name : null,  // Now this should not be null
                 'created_at' => Carbon::parse($offer->created_at)->format('Y-m-d H:i:s'),

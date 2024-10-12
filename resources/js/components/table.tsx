@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/table-shadcn";
 import { useState } from "react";
 import { DataTablePagination } from "./tableComponents/Pagination";
-import { DotFilledIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { DataTableToolbar } from "./tableComponents/data-table-toolbar";
+import { ReloadIcon } from "@radix-ui/react-icons";
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
@@ -33,7 +33,7 @@ interface DataTableProps<TData, TValue> {
     Create?: any;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { status: string }, TValue>({
     columns,
     data,
     pagination,
@@ -112,7 +112,15 @@ export function DataTable<TData, TValue>({
                                                 row.getIsSelected() &&
                                                 "selected"
                                             }
-                                            className="whitespace-nowrap text-center"
+                                            className={`whitespace-nowrap text-center ${
+                                                [
+                                                    "inactive",
+                                                    "rejected",
+                                                    "blocked",
+                                                ].includes(row.original.status)
+                                                    ? "bg-red-700 text-white font-serif hover:bg-red-700"
+                                                    : ""
+                                            }`}
                                         >
                                             {row
                                                 .getVisibleCells()

@@ -39,7 +39,7 @@ export function DataTablePagination<TData>({
     };
 
     return (
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-2 flex-col sm:flex-row">
             <div className="flex-1 text-sm text-muted-foreground">
                 {table.getFilteredSelectedRowModel().rows.length} of{" "}
                 {table.getFilteredRowModel().rows.length} row(s) selected.
@@ -49,15 +49,15 @@ export function DataTablePagination<TData>({
                     <TasksTableFloatingBar table={table} />
                 ) : null}
             </>
-            <div className="flex items-center gap-2 mr-8">
+            <div className="flex items-center gap-2 mr-8 justify-between w-full sm:w-fit">
                 <PerPage onUrlChange={onUrlChange} endPoint={endPoint} />
                 <div className="flex items-center space-x-2">
-                    <p className="text-sm">
+                    <p className="text-sm hidden sm:block">
                         Page {pagination.current_page} of {pagination.last_page}
                     </p>
                     {/* First page button */}
                     <Button
-                        className="hidden h-8 w-8 p-0 lg:flex"
+                        className="h-8 w-8 p-0"
                         disabled={
                             pagination.current_page === pagination.first_page
                         }
@@ -92,7 +92,7 @@ export function DataTablePagination<TData>({
 
                     {/* Last page button */}
                     <Button
-                        className="hidden h-8 w-8 p-0 lg:flex"
+                        className="h-8 w-8 p-0"
                         variant="ghost"
                         disabled={
                             pagination.current_page === pagination.last_page

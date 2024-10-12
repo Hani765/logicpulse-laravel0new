@@ -22,7 +22,7 @@ export interface User {
 }
 
 export type PageProps<
-    T extends Record<string, unknown> = Record<string, unknown>
+    T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
     auth: {
         user: User;
@@ -50,6 +50,7 @@ export type DomainsType = {
     clicks: number;
     conversions: number;
     cvr: number;
+    chart_data: array;
     status: string;
     created_at: string;
     updated_at: string;

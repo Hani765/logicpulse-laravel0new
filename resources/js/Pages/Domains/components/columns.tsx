@@ -1,12 +1,12 @@
 import React, { ReactNode } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Dropdown from "./dropdown";
 import { DomainsType } from "@/types";
 import { DataTableColumnHeader } from "@/components/tableComponents/data-table-column-header";
 import { formatDate } from "@/lib/utils";
+import Progress from "@/components/charts/table-chart";
+import Status from "@/components/tableComponents/status";
 
 export const Columns = (): ColumnDef<DomainsType>[] => [
     {
@@ -64,6 +64,16 @@ export const Columns = (): ColumnDef<DomainsType>[] => [
         ),
     },
     {
+        accessorKey: "progress",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Progress" />
+        ),
+        cell: ({ row }) => {
+            const progress = row.getValue("progress");
+            return <Progress progress={progress} />;
+        },
+    },
+    {
         accessorKey: "created_at",
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Created At" />
@@ -84,15 +94,7 @@ export const Columns = (): ColumnDef<DomainsType>[] => [
         ),
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
-            return (
-                <>
-                    {status === "active" ? (
-                        <div className="text-green-500">Active</div>
-                    ) : (
-                        <div className="text-red-500">Inactive</div>
-                    )}
-                </>
-            );
+            return <Status status={status} />;
         },
     },
     {

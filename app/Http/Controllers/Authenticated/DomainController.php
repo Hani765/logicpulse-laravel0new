@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Authenticated;
 
 use App\Events\DomainAdded;
+use App\Events\NotificationSent as EventsNotificationSent;
 use Carbon\Carbon;
 
 use App\Http\Controllers\Controller;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use NotificationSent;
 
 class DomainController extends Controller
 {
@@ -32,9 +34,20 @@ class DomainController extends Controller
     {
         try {
             $metricsService = new MetricsService();
-            $today = $metricsService->getTodayDateInUserTimezone();
+            // Get start_date and end_date from the request or set defaults (-7 days to today)
+            $start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $chart_start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getDateInUserTimezone('-7 day');
+            $end_date = $request->input('to')
+                ? $metricsService->convertToUserTimezone($request->input('to'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $start_date = Carbon::parse($start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $chart_start_date = Carbon::parse($chart_start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $end_date = Carbon::parse($end_date)->endOfDay(); // 2024-10-09 23:59:59
             $user = $metricsService->getUser();
-
             $perPage = $request->input('per_page', 50);
             $page = $request->input('page', 1);
             $q = $request->input('q', '');
@@ -43,14 +56,13 @@ class DomainController extends Controller
             $roleToColumnMap = [
                 'administrator' => '',
                 'admin' => 'admin_id',
-                'manager' => 'manager_id',
-                'user' => 'user_id',
             ];
 
             if (!isset($roleToColumnMap[$user->role])) {
                 return response()->json(['error' => 'Invalid role'], 400);
             }
 
+            // Query domains based on the user's role
             $domainsQuery = $this->getDomainsQuery($roleToColumnMap[$user->role]);
 
             if ($q) {
@@ -60,6 +72,7 @@ class DomainController extends Controller
                 $domainsQuery->where('status', 'like', "%$status%");
             }
 
+            // Paginate the domains
             $domains = $domainsQuery->paginate($perPage, ['*'], 'page', $page);
             $response = [];
             $clickColumn = $roleToColumnMap[$user->role];
@@ -68,7 +81,8 @@ class DomainController extends Controller
                 $metrics = $metricsService->getClicksAndConversions(
                     'domain',
                     $domain->unique_id,
-                    $today,
+                    $start_date,
+                    $end_date,
                     $clickColumn
                 );
 
@@ -79,12 +93,13 @@ class DomainController extends Controller
                     'clicks' => $metrics['clicks'],
                     'conversions' => $metrics['conversions'],
                     'cvr' => $metrics['cvr'],
+                    'progress' => $metricsService->getProgressData('domain', $domain->unique_id, $clickColumn, ),
                     'created_at' => $domain->created_at,
                     'updated_at' => $domain->updated_at,
                     'status' => $domain->status,
                 ];
             }
-
+            $chartData = $metricsService->getChartData('domain', $chart_start_date, $end_date, $clickColumn, );
             $paginationData = [
                 'current_page' => $domains->currentPage(),
                 'last_page' => $domains->lastPage(),
@@ -98,6 +113,7 @@ class DomainController extends Controller
             return response()->json([
                 'data' => $response,
                 'pagination' => $paginationData,
+                'chart_data' => $chartData,
             ]);
         } catch (\Exception $err) {
             Log::error("Domain index error => " . $err->getMessage());
@@ -106,6 +122,8 @@ class DomainController extends Controller
             ], 500);
         }
     }
+
+
     private function getDomainsQuery(string $clickColumn)
     {
         $user = Auth::user();
@@ -127,6 +145,7 @@ class DomainController extends Controller
             $payload['user_id'] = $user->unique_id;
             $payload["unique_id"] = Str::uuid();
             $domain = Domain::create($payload);
+            $notificationData = $domain;
             return back()->with('status', 'domain-created');
         } catch (\Exception $err) {
             return response()->json([

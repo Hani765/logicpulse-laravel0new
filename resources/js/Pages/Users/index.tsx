@@ -5,7 +5,6 @@ import Create from "./components/create/create";
 import { Columns } from "./components/columns";
 import { useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import { DataTableSkeleton } from "@/components/tableComponents/tableSkeleton";
 import debounce from "lodash/debounce";
 
 // Define types for API response
