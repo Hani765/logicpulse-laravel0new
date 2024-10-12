@@ -16,7 +16,7 @@
         "nnjeim/world": "^1.1",
         "proxycheck/proxycheck-php": "*",
         "pusher/pusher-php-server": "*",
-        "spatie/dns": "*",
+        "spatie/dns": "^2.6",
         "stevebauman/location": "^7.3",
         "tightenco/ziggy": "^2.0"
     },
