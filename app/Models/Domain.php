@@ -10,6 +10,9 @@ class Domain extends Model
 {
     use HasFactory;
     protected $fillable = [
-        "user_id", "unique_id", "name"
+        "user_id",
+        "unique_id",
+        "name",
+        "visiblity"
     ];
 }

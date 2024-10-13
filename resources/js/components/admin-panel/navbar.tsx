@@ -45,7 +45,7 @@ export default function Navbar({ user }: { user: User }) {
                 </div>
                 <div className="flex gap-4 justify-end items-center w-full">
                     <MdMessage />
-                    <NotificationsModel />
+                    <NotificationsModel user={user} />
                     <UserNav
                         token="2313123wweqewqwe"
                         profile_image={user.profile_image}

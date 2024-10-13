@@ -7,20 +7,20 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationSent implements ShouldBroadcastNow
+class ClickConversionRecieved implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
-    public $notification;
+    public $clickConversion;
     public $userIds;
     public $roles;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($notification, $userIds = [], $roles = [])
+    public function __construct($clickConversion, array $userIds = [], array $roles = [])
     {
-        $this->notification = $notification;
+        $this->clickConversion = $clickConversion;
         $this->userIds = $userIds;
         $this->roles = $roles;
     }
@@ -35,14 +35,14 @@ class NotificationSent implements ShouldBroadcastNow
         // Broadcast to specified user IDs
         if (!empty($this->userIds)) {
             foreach ($this->userIds as $userId) {
-                $channels[] = new PrivateChannel('notifications.' . $userId);
+                $channels[] = new PrivateChannel('clickConversion.' . $userId);
             }
         }
 
         // Broadcast to specified roles
         if (!empty($this->roles)) {
             foreach ($this->roles as $role) {
-                $channels[] = new PrivateChannel('notifications.role.' . $role);
+                $channels[] = new PrivateChannel('clickConversion.role.' . $role);
             }
         }
 
@@ -54,6 +54,6 @@ class NotificationSent implements ShouldBroadcastNow
      */
     public function broadcastAs(): string
     {
-        return 'notification.sent';
+        return 'clickConversion.sent';
     }
 }

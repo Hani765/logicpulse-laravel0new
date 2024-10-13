@@ -88,7 +88,7 @@ export function DataTableToolbar<TData>({
                     size="sm"
                     onClick={() =>
                         exportTableToCSV(table, {
-                            filename: "Domain-records",
+                            filename: "Records",
                             excludeColumns: ["select", "actions"],
                         })
                     }

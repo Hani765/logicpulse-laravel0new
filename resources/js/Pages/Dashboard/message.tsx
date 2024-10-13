@@ -13,7 +13,6 @@ export default function Message({
 }) {
     const [newMessage, setNewMessage] = useState(message);
     const [pause, setPause] = useState(true);
-
     // Function to format the current date and time
     const getCurrentDateTime = () => {
         const now = new Date();
@@ -38,9 +37,8 @@ export default function Message({
         return `${formattedDate}, ${formattedTime}`;
     };
 
-    const [currentDateTime, setCurrentDateTime] = useState(
-        getCurrentDateTime()
-    );
+    const [currentDateTime, setCurrentDateTime] =
+        useState(getCurrentDateTime());
 
     // Update time and date every second
     useEffect(() => {

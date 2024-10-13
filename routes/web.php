@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/fetch/trackers', [FetchController::class, 'fetchFilterTrackers']);
         Route::get('/fetch/networks', [FetchController::class, 'fetchFilterNetworks']);
         Route::get('/dashboard/fetch/domains', [DomainController::class, 'fetchDomains']);
+        Route::get('/dashboard/fetch/trackers', [TrackersController::class, 'fetchTrackers']);
+        Route::get('/dashboard/fetch/networks', [NetworkController::class, 'fetchnetrackers']);
     });
 
     Route::middleware(['checkRole:administrator,admin,manager'])->group(function () {
@@ -74,7 +76,9 @@ Route::middleware('auth')->group(function () {
         "/notifications" => NotificationsController::class,
         "/sessions" => SessionController::class,
         "/reports/clicks" => ClickController::class,
+
     ]);
+    Route::get('/fetch/clicks', [ClickController::class, 'fetchClicks']);
     Route::get('/fetch/countriesData', [FetchController::class, 'fetchFilterCountries']);
     Route::get('/fetch/categories', [FetchController::class, 'fetchFilterCategories']);
     Route::get('/fetch/languagesData', [FetchController::class, 'fetchFilterLanguages']);

@@ -1,15 +1,25 @@
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { ReloadIcon } from "@radix-ui/react-icons";
-import { useForm } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import { LabelInputContainer } from "@/components/ui/LabelInputContainer";
 import SubmitBtn from "@/components/ui/SubmitBtn";
 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { PageProps } from "@/types";
 export default function Form() {
+    const page = usePage<PageProps>();
+    const userRole = page.props.auth.user.role;
     const { data, setData, processing, post, reset, errors } = useForm({
         name: "",
         param: "",
         value: "",
+        visiblity: "private",
     });
     const createTracker = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -62,6 +72,31 @@ export default function Form() {
                     errorMessage={errors.value}
                     description="Provide the value for the tracker parameter. Use placeholders like {sub2} to dynamically track different values."
                 />
+                {userRole === "administrator" && (
+                    <div className="">
+                        <Label>Visible</Label>
+                        <Select
+                            value={data.visiblity}
+                            onValueChange={(visiblity) =>
+                                setData({ ...data, visiblity })
+                            }
+                        >
+                            <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                                {["private", "public"].map((visibleOption) => (
+                                    <SelectItem
+                                        key={visibleOption}
+                                        value={visibleOption}
+                                    >
+                                        {visibleOption}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
             <SubmitBtn
                 processing={processing}

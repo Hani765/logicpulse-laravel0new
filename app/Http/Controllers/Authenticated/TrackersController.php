@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Authenticated;
 
+use App\Events\ClickConversionRecieved;
+use App\Events\NotificationSent;
 use App\Http\Requests\Authenticated\TrackerRequest;
 use Carbon\Carbon;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tracker;
+use App\Services\CreateNotificationService;
+use App\Services\MetricsService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -26,113 +31,114 @@ class TrackersController extends Controller
      */
     public function index(Request $request): Response
     {
+        return Inertia::render('Trackers/index');
+    }
+
+    public function fetchTrackers(Request $request)
+    {
         try {
-            $user = Auth::user();
-            $role = $user->role;
-            $userTimezone = $user->time_zone; // Assuming the user's timezone is stored in the user's table
-            $applicationTimezone = Config::get('app.timezone');
-
-            // Set the default timezone to the application timezone
-            // This ensures that the queries are executed using the application's timezone
-            date_default_timezone_set($applicationTimezone);
-
-            // Convert today's date to the user's timezone for filtering
-            $today = Carbon::now($applicationTimezone)->setTimezone($userTimezone)->toDateString();
-
-            $perPage = $request->input('per_page', 50); // Default to 50 items per page
+            $metricsService = new MetricsService();
+            // Get start_date and end_date from the request or set defaults (-7 days to today)
+            $start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $chart_start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getDateInUserTimezone('-7 day');
+            $end_date = $request->input('to')
+                ? $metricsService->convertToUserTimezone($request->input('to'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $start_date = Carbon::parse($start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $chart_start_date = Carbon::parse($chart_start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $end_date = Carbon::parse($end_date)->endOfDay(); // 2024-10-09 23:59:59
+            $user = $metricsService->getUser();
+            $perPage = $request->input('per_page', 50);
             $page = $request->input('page', 1);
-            $q = $request->input('q', ''); // Get the search query from the request, default to empty string if not provided
+            $q = $request->input('q', '');
+            $status = $request->input('status', '');
 
-            // Explicitly define the mapping of roles to column names
             $roleToColumnMap = [
                 'administrator' => '',
                 'admin' => 'admin_id',
-                'manager' => 'manager_id',
-                'user' => 'user_id',
             ];
 
-            if (!isset($roleToColumnMap[$role])) {
+            if (!isset($roleToColumnMap[$user->role])) {
                 return response()->json(['error' => 'Invalid role'], 400);
             }
 
-            if ($user->role === 'administrator') {
-                $TrackerQuery = Tracker::query();
-            } elseif ($user->role === 'admin') {
-                $TrackerQuery = Tracker::query()->where('user_id', $user->unique_id);
-            } else {
-                // Invalid role, return error message
-                return response()->json([
-                    "message" => "Invalid role. You are not allowed to access this resource."
-                ], 403);
-            }
+            // Query trackers based on the user's role
+            $trackersQuery = $this->getTrackersQuery();
 
             if ($q) {
-                $TrackerQuery->where('name', 'like', "%$q%");
+                $trackersQuery->where('name', 'like', "%$q%");
+            }
+            if ($status) {
+                $trackersQuery->where('status', 'like', "%$status%");
             }
 
-            // Paginate results
-            $Trackers = $TrackerQuery->paginate($perPage, ['*'], 'page', $page);
-
-            // Adding pagination meta data
+            // Paginate the trackers
+            $trackers = $trackersQuery->paginate($perPage, ['*'], 'page', $page);
             $response = [];
-            $click_column = $roleToColumnMap[$role];
-            foreach ($Trackers as $traker) {
-                if ($role == 'administrator') {
-                    $clicksCount = DB::table('clicks')
-                        ->where('tracker_id', $traker->unique_id)->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->where('tracker_id', $traker->unique_id)->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                } else {
-                    $clicksCount = DB::table('clicks')
-                        ->where('tracker_id', $traker->unique_id)
-                        ->where($click_column, $user->unique_id)->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->where('tracker_id', $traker->unique_id)
-                        ->where($click_column, $user->unique_id)->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                }
-
-                $cvr = $clicksCount > 0 ? ($conversionsCount / $clicksCount) * 100 : 0;
+            $clickColumn = $roleToColumnMap[$user->role];
+            foreach ($trackers as $tracker) {
+                $metrics = $metricsService->getClicksAndConversions(
+                    'tracker',
+                    $tracker->unique_id,
+                    $start_date,
+                    $end_date,
+                    $clickColumn
+                );
 
                 $response[] = [
-                    'id' => $traker->id,
-                    'unique_id' => $traker->unique_id,
-                    'name' => $traker->name,
-                    'param' => $traker->param,
-                    'value' => $traker->value,
-                    'clicks' => $clicksCount,
-                    'conversions' => $conversionsCount,
-                    'cvr' => $cvr,
-                    'created_at' => $traker->created_at,
-                    'updated_at' => $traker->updated_at,
-                    "status" => $traker->status,
+                    'id' => $tracker->id,
+                    'unique_id' => $tracker->unique_id,
+                    'name' => $tracker->name,
+                    'value' => $tracker->value,
+                    'param' => $tracker->param,
+                    'clicks' => $metrics['clicks'],
+                    'conversions' => $metrics['conversions'],
+                    'cvr' => $metrics['cvr'],
+                    'progress' => $metricsService->getProgressData('tracker', $tracker->unique_id, $clickColumn, ),
+                    'created_at' => $tracker->created_at,
+                    'updated_at' => $tracker->updated_at,
+                    'status' => $tracker->status,
                 ];
             }
+            $chartData = $metricsService->getChartData('tracker', $chart_start_date, $end_date, $clickColumn, );
             $paginationData = [
-                'current_page' => $Trackers->currentPage(),
-                'last_page' => $Trackers->lastPage(),
-                'first_page' => 1, // First page is always 1 in Laravel pagination
-                'per_page' => $Trackers->perPage(),
-                'total' => $Trackers->total(),
-                'next_page' => $Trackers->currentPage() < $Trackers->lastPage() ? $Trackers->currentPage() + 1 : null,
-                'prev_page' => $Trackers->currentPage() > 1 ? $Trackers->currentPage() - 1 : null,
+                'current_page' => $trackers->currentPage(),
+                'last_page' => $trackers->lastPage(),
+                'first_page' => 1,
+                'per_page' => $trackers->perPage(),
+                'total' => $trackers->total(),
+                'next_page' => $trackers->currentPage() < $trackers->lastPage() ? $trackers->currentPage() + 1 : null,
+                'prev_page' => $trackers->currentPage() > 1 ? $trackers->currentPage() - 1 : null,
             ];
-            return Inertia::render('Trackers/index', [
+
+            return response()->json([
                 'data' => $response,
                 'pagination' => $paginationData,
+                'chart_data' => $chartData,
             ]);
         } catch (\Exception $err) {
-            Log::info("Traker index error =>" . $err->getMessage());
+            Log::error("tracker index error => " . $err->getMessage());
             return response()->json([
                 "message" => "Something went wrong. Please try again later!"
             ], 500);
+        }
+    }
+
+
+    private function getTrackersQuery()
+    {
+        $user = Auth::user();
+
+        if ($user->role === 'administrator') {
+            return Tracker::query()->orderByDesc('created_at');
+        } elseif ($user->role === 'admin') {
+            return Tracker::query()->where('user_id', $user->unique_id)->orWhere('visiblity', 'public')->orderByDesc('created_at');
+        } else {
+            abort(403, "Invalid role. You are not allowed to access this resource.");
         }
     }
 
@@ -141,15 +147,29 @@ class TrackersController extends Controller
      */
     public function store(TrackerRequest $request)
     {
+        $notificationSerive = new CreateNotificationService();
+
         $payload = $request->validated();
-        try {
-            $user = $request->user();
-            $payload['user_id'] = $user->unique_id;
-            $payload["unique_id"] = Str::uuid();
-            $Traker = Tracker::create($payload);
-        } catch (\Exception $err) {
-            Log::info("Traker creaate error =>" . $err->getMessage());
+        $user = $request->user();
+        $payload['user_id'] = $user->unique_id;
+        $payload["unique_id"] = Str::uuid();
+        $Traker = Tracker::create($payload);
+        $roles = '';
+        if ($user->role !== 'administrator') {
+            $roles = 'administrator';
+            $message = $user->username . ' added a new Tracker "' . $Traker->name . '"';
+
+        } else {
+            if ($Traker->visiblity == 'public') {
+                $roles = 'admin';
+            }
+            $message = 'A new tracker has been added! Go to trackers page and check it out.';
         }
+
+        $notificationSerive->create($message, '', $roles);
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
+
     }
 
     /**
@@ -157,19 +177,18 @@ class TrackersController extends Controller
      */
     public function update(Request $request, string $uniqueId)
     {
+        $notificationSerive = new CreateNotificationService();
         $tracker = Tracker::where('unique_id', $uniqueId)->first();
 
         $payload = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('trackers', 'name')->ignore($tracker->id)],
-            'param' => 'required|string|max:255',
-            'value' => 'required|string|max:255',
+            'param' => ['required', 'string', 'max:255', 'regex:/^\S*$/'], // No spaces allowed
+            'value' => ['required', 'string', 'max:255', 'regex:/^\S*$/'], // No spaces allowed
             'status' => 'required|string|in:active,inactive',
         ]);
-        try {
-            $tracker->update($payload);
-        } catch (\Exception $err) {
-            Log::info("Traker creaate error =>" . $err->getMessage());
-        }
+        $tracker->update($payload);
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
     }
 
 
@@ -178,22 +197,17 @@ class TrackersController extends Controller
      */
     public function destroy(Request $request, string $uniqueId)
     {
-        try {
-            // Ensure the user is authenticated
-            if (!Auth::check()) {
-                return response()->json(['message' => 'Unauthenticated'], 401);
-            }
-            // Find the domain by its unique_id
-            $traker = Tracker::where('unique_id', $uniqueId)->firstOrFail();
+        $notificationSerive = new CreateNotificationService();
 
-            // Delete the domain
-            $traker->delete();
+        // Find the tracker by its unique_id
+        $traker = Tracker::where('unique_id', $uniqueId)->firstOrFail();
 
-            // Return success response
-        } catch (\Exception $err) {
-            Log::error('Error in TrackersController@show: ' . $err->getMessage());
-            return response()->json(['message' => 'Failed to delete Network'], 500);
-        }
+        // Delete the tracker
+        $traker->delete();
+
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
+
     }
 
     public function deleteRows(Request $request)

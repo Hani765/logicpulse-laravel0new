@@ -3,37 +3,41 @@ import { User } from "@/types";
 import { NotificationEvent } from "@/types/global";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { playNotificationSound } from "../hooks/play-audio";
 
-// You might be passing the current user's ID and role from a context or as props
 const NotificationsComponent = ({ user }: { user: User }) => {
-    const userId = user.id;
-    useEffect(() => {
-        // Dynamically subscribe to the channel using userId and role
-        const channel = echoInstance.private(`notifications.${userId}`);
+    const userId = user.unique_id;
+    const userRole = user.role;
 
-        const playNotificationSound = () => {
-            const audio = new Audio("assets/sounds/notification.wav");
-            audio.play().catch((error) => {
-                console.error("Error playing notification sound:", error);
+    useEffect(() => {
+        const channels: any[] = [];
+
+        // Subscribe to user-specific channel
+        channels.push(echoInstance.private(`notifications.${userId}`));
+
+        // Subscribe to role-specific channel
+        channels.push(echoInstance.private(`notifications.role.${userRole}`));
+
+        // Listen for the notification event on all channels
+        channels.forEach((channel) => {
+            channel.listen(
+                ".notification.sent",
+                (e: { notification: NotificationEvent }) => {
+                    toast.message("New message", {
+                        description: e.notification.message,
+                    });
+                    playNotificationSound(); // Play sound when notification is received
+                },
+            );
+        });
+
+        // Cleanup the event listeners when the component unmounts
+        return () => {
+            channels.forEach((channel) => {
+                channel.stopListening(".notification.sent");
             });
         };
-
-        // Listen for the broadcast event
-        channel.listen(
-            ".notification.sent",
-            (e: { notification: NotificationEvent }) => {
-                toast.message("New message", {
-                    description: e.notification.message,
-                });
-                playNotificationSound(); // Play sound when notification is received
-            },
-        );
-
-        // Cleanup the event listener when the component unmounts
-        return () => {
-            channel.stopListening(".notification.sent");
-        };
-    }, [userId]); // Re-run if userId or role changes
+    }, [userId, userRole]); // Re-run if userId or role changes
 
     return <div></div>;
 };

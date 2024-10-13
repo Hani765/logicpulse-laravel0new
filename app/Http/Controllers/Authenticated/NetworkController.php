@@ -8,6 +8,8 @@ use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Authenticated\NetworkRequest;
 use App\Models\Network;
+use App\Services\CreateNotificationService;
+use App\Services\MetricsService;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -22,98 +24,79 @@ class NetworkController extends Controller
 {
     public function index(Request $request)
     {
+        return Inertia::render('Networks/index');
+    }
+    public function fetchnetrackers(Request $request)
+    {
         try {
-            $user = Auth::user();
-            $role = $user->role;
-            $userTimezone = $user->time_zone; // Assuming the user's timezone is stored in the user's table
-            $applicationTimezone = Config::get('app.timezone');
-
-            date_default_timezone_set($applicationTimezone);
-
-            // Convert today's date to the user's timezone for filtering
-            $today = Carbon::now($applicationTimezone)->setTimezone($userTimezone)->toDateString();
-
-            $perPage = $request->input('per_page', 50); // Default to 50 items per page
+            $metricsService = new MetricsService();
+            // Get start_date and end_date from the request or set defaults (-7 days to today)
+            $start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $chart_start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getDateInUserTimezone('-7 day');
+            $end_date = $request->input('to')
+                ? $metricsService->convertToUserTimezone($request->input('to'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $start_date = Carbon::parse($start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $chart_start_date = Carbon::parse($chart_start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $end_date = Carbon::parse($end_date)->endOfDay(); // 2024-10-09 23:59:59
+            $user = $metricsService->getUser();
+            $perPage = $request->input('per_page', 50);
             $page = $request->input('page', 1);
-            $q = $request->input('q', ''); // Get the search query from the request, default to empty string if not provided
+            $q = $request->input('q', '');
+            $status = $request->input('status', '');
 
-            // Explicitly define the mapping of roles to column names
             $roleToColumnMap = [
                 'administrator' => '',
                 'admin' => 'admin_id',
-                'manager' => 'manager_id',
-                'user' => 'user_id',
             ];
 
-            if (!isset($roleToColumnMap[$role])) {
+            if (!isset($roleToColumnMap[$user->role])) {
                 return response()->json(['error' => 'Invalid role'], 400);
             }
 
-            // Initialize the query based on the user's role
-            if ($role === 'administrator') {
-                $networksQuery = Network::query();
-            } elseif ($role === 'admin') {
-                $networksQuery = Network::query()->where('user_id', $user->unique_id);
-            } else {
-                return response()->json([
-                    "message" => "Invalid role. You are not allowed to access this resource."
-                ], 403);
-            }
+            // Query networks based on the user's role
+            $networksQuery = $this->getnetworksQuery();
 
-            // If search query is provided, apply search filter
             if ($q) {
                 $networksQuery->where('name', 'like', "%$q%");
             }
+            if ($status) {
+                $networksQuery->where('status', 'like', "%$status%");
+            }
 
-            // Paginate results
+            // Paginate the networks
             $networks = $networksQuery->paginate($perPage, ['*'], 'page', $page);
             $response = [];
-            $click_column = $roleToColumnMap[$role];
-
+            $clickColumn = $roleToColumnMap[$user->role];
             foreach ($networks as $network) {
-                if ($role === 'administrator') {
-                    $clicksCount = DB::table('clicks')
-                        ->where('network_id', $network->unique_id)
-                        ->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->where('network_id', $network->unique_id)
-                        ->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                } else {
-                    $clicksCount = DB::table('clicks')
-                        ->where('network_id', $network->unique_id)
-                        ->where($click_column, $user->unique_id)
-                        ->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->where('network_id', $network->unique_id)
-                        ->where($click_column, $user->unique_id)
-                        ->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                }
-
-                $cvr = $clicksCount > 0 ? ($conversionsCount / $clicksCount) * 100 : 0;
+                $metrics = $metricsService->getClicksAndConversions(
+                    'network',
+                    $network->unique_id,
+                    $start_date,
+                    $end_date,
+                    $clickColumn
+                );
 
                 $response[] = [
                     'id' => $network->id,
                     'unique_id' => $network->unique_id,
                     'name' => $network->name,
-                    'tracker' => $network->tracker ? $network->tracker->name : null,  // Assuming 'name' is the column in trackers table
-                    'tracker_id' => $network->tracker ? $network->tracker->unique_id : null,
-                    'clicks' => $clicksCount,
-                    'conversions' => $conversionsCount,
-                    'cvr' => $cvr,
-                    'created_at' => Carbon::parse($network->created_at)->format('Y-m-d H:i:s'),
-                    'updated_at' => Carbon::parse($network->updated_at)->format('Y-m-d H:i:s'),
+                    'tracker_id' => $network->tracker_id,
+                    'tracker' => $network->tracker ? $network->tracker->name : null,  // Assuming 'name' 
+                    'clicks' => $metrics['clicks'],
+                    'conversions' => $metrics['conversions'],
+                    'cvr' => $metrics['cvr'],
+                    'progress' => $metricsService->getProgressData('network', $network->unique_id, $clickColumn, ),
+                    'created_at' => $network->created_at,
+                    'updated_at' => $network->updated_at,
                     'status' => $network->status,
                 ];
             }
-
+            $chartData = $metricsService->getChartData('network', $chart_start_date, $end_date, $clickColumn, );
             $paginationData = [
                 'current_page' => $networks->currentPage(),
                 'last_page' => $networks->lastPage(),
@@ -124,44 +107,60 @@ class NetworkController extends Controller
                 'prev_page' => $networks->currentPage() > 1 ? $networks->currentPage() - 1 : null,
             ];
 
-            return Inertia::render('Networks/index', [
+            return response()->json([
                 'data' => $response,
                 'pagination' => $paginationData,
+                'chart_data' => $chartData,
             ]);
         } catch (\Exception $err) {
-            Log::error("Domain index error => " . $err->getMessage());
+            Log::error("network index error => " . $err->getMessage());
             return response()->json([
                 "message" => "Something went wrong. Please try again later!"
             ], 500);
         }
     }
 
+
+    private function getnetworksQuery()
+    {
+        $user = Auth::user();
+
+        if ($user->role === 'administrator') {
+            return Network::query()->orderByDesc('created_at');
+        } elseif ($user->role === 'admin') {
+            return Network::query()->where('user_id', $user->unique_id)->orderByDesc('created_at');
+        } else {
+            abort(403, "Invalid role. You are not allowed to access this resource.");
+        }
+    }
     public function store(NetworkRequest $request)
     {
+        $notificationSerive = new CreateNotificationService();
         $payload = $request->validated();
-        try {
-            $user = $request->user();
-            $payload['user_id'] = $user->unique_id;
-            $payload["unique_id"] = Str::uuid();
-            $network = Network::create($payload);
-        } catch (\Exception $err) {
-            Log::info("Network creaate error =>" . $err->getMessage());
-            return response()->json([
-                "message" => "Something went wrong. Please try again later!"
-            ], 500);
+        $user = $request->user();
+        $payload['user_id'] = $user->unique_id;
+        $payload["unique_id"] = Str::uuid();
+        $network = Network::create($payload);
+        if ($user->role !== 'administrator') {
+            $roles = 'administrator';
+            $message = $user->username . ' added a new Tracker "' . $network->name . '"';
+            $notificationSerive->create($message, '', $roles);
         }
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
     }
 
 
     public function update(Request $request, string $unique_id)
     {
         // Authentication check
+        $notificationSerive = new CreateNotificationService();
 
         $network = Network::where('unique_id', $unique_id)->firstOrFail();
         // Validation
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('networks', 'name')->ignore($network->id)],
-            'tracker_id' => 'required',
+            'tracker_id' => 'required|string',
             'status' => 'required|string|in:active,inactive,pause',
         ]);
 
@@ -170,6 +169,9 @@ class NetworkController extends Controller
         $network->status = $validated['status'];
         $network->tracker_id = $validated['tracker_id'];
         $network->save();
+
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
     }
 
     /**
@@ -177,22 +179,21 @@ class NetworkController extends Controller
      */
     public function destroy(Request $request, $uniqueId)
     {
-        try {
-            // Ensure the user is authenticated
-            if (!Auth::check()) {
-                return response()->json(['message' => 'Unauthenticated'], 401);
-            }
-            // Find the domain by its unique_id
-            $network = Network::where('unique_id', $uniqueId)->firstOrFail();
+        $notificationSerive = new CreateNotificationService();
 
-            // Delete the domain
-            $network->delete();
-
-            // Return success response
-        } catch (\Exception $err) {
-            // Return error response if domain not found or deletion fails
-            return response()->json(['message' => 'Failed to delete Network'], 500);
+        // Ensure the user is authenticated
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
         }
+        // Find the domain by its unique_id
+        $network = Network::where('unique_id', $uniqueId)->firstOrFail();
+
+        // Delete the domain
+        $network->delete();
+
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
+        // Return success response
     }
     public function deleteRows(Request $request)
     {

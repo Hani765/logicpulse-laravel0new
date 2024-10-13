@@ -1,18 +1,27 @@
 "use client";
-import React, { FormEventHandler, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { ReloadIcon } from "@radix-ui/react-icons";
-import { Button } from "@/components/ui/button";
+import React, { FormEventHandler } from "react";
 import { LabelInputContainer } from "@/components/ui/LabelInputContainer";
-import { useForm } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import InputError from "@/components/InputError";
 import { toast } from "sonner";
 import { Link } from "lucide-react";
 import SubmitBtn from "@/components/ui/SubmitBtn";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { PageProps } from "@/types";
 
 export default function Form({ status }: { status?: string }) {
+    const page = usePage<PageProps>();
+    const userRole = page.props.auth.user.role;
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
+        visiblity: "private",
     });
 
     const submit: FormEventHandler = (e) => {
@@ -44,6 +53,33 @@ export default function Form({ status }: { status?: string }) {
                         errorMessage={errors.name}
                         Icon={Link}
                     />
+                    {userRole === "administrator" && (
+                        <div className="">
+                            <Label>Visible</Label>
+                            <Select
+                                value={data.visiblity}
+                                onValueChange={(visiblity) =>
+                                    setData({ ...data, visiblity })
+                                }
+                            >
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent side="top">
+                                    {["private", "public"].map(
+                                        (visibleOption) => (
+                                            <SelectItem
+                                                key={visibleOption}
+                                                value={visibleOption}
+                                            >
+                                                {visibleOption}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </div>
                 <SubmitBtn
                     processing={processing}

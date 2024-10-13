@@ -1,9 +1,12 @@
+import React, { ReactNode } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Dropdown from "./dropdown";
 import { NetworkType } from "@/types";
+import { DataTableColumnHeader } from "@/components/tableComponents/data-table-column-header";
+import { formatDate } from "@/lib/utils";
+import Progress from "@/components/charts/table-chart";
+import Status from "@/components/tableComponents/status";
 
 export const Columns = (): ColumnDef<NetworkType>[] => [
     {
@@ -32,149 +35,75 @@ export const Columns = (): ColumnDef<NetworkType>[] => [
     },
     {
         accessorKey: "id",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    ID
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: (info) => info.row.index + 1,
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="ID" />
+        ),
     },
     {
         accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Network Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Tracker Name" />
+        ),
     },
     {
         accessorKey: "tracker",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Tracker
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Tracker" />
+        ),
     },
     {
         accessorKey: "clicks",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Clicks
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Clicks" />
+        ),
     },
     {
         accessorKey: "conversions",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Conversions
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Conversions" />
+        ),
     },
     {
         accessorKey: "cvr",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    CVR
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="CVR" />
+        ),
+    },
+    {
+        accessorKey: "progress",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Progress" />
+        ),
+        cell: ({ row }) => {
+            const progress = row.getValue("progress");
+            return <Progress progress={progress} />;
         },
     },
     {
         accessorKey: "created_at",
-        header: "Create At",
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("created_at"));
-            const formated = date.toLocaleDateString();
-            return <div className="font-medium">{formated}</div>;
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Created At" />
+        ),
+        cell: ({ cell }) => formatDate(cell.getValue() as Date),
     },
     {
         accessorKey: "updated_at",
-        header: "Updated At",
-        cell: ({ row }) => {
-            const date = new Date(row.getValue("updated_at"));
-            const formated = date.toLocaleDateString();
-            return <div className="font-medium">{formated}</div>;
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Updated At" />
+        ),
+        cell: ({ cell }) => formatDate(cell.getValue() as Date),
     },
     {
         accessorKey: "status",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Status
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
-        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Status" />
+        ),
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
-            return (
-                <>
-                    {status === "active" ? (
-                        <div className="text-green-500">Active</div>
-                    ) : (
-                        <div className="text-red-500">Inactive</div>
-                    )}
-                </>
-            );
+            return <Status status={status} />;
         },
     },
     {
-        header: "Actions",
         id: "actions",
         cell: ({ row }) => {
             const rowCurrent = row.original;

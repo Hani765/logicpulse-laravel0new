@@ -31,8 +31,8 @@ class FetchController extends Controller
 
             // Initialize the base query
             $query = User::select('unique_id', 'username')
-            ->where('status', 'active')
-            ->where('role', '!=', 'administrator');        
+                ->where('status', 'active')
+                ->where('role', '!=', 'administrator');
 
             if ($role === 'admin') {
                 $query->where('admin_id', $user->unique_id);
@@ -211,7 +211,7 @@ class FetchController extends Controller
                 if ($role === 'administrator') {
                     // No additional filters for administrators
                 } elseif ($role === 'admin') {
-                    $query->where('user_id', $user->unique_id);
+                    $query->where('user_id', $user->unique_id)->orWhere('visiblity', 'public');
                 }
 
                 // Execute the query
@@ -271,7 +271,7 @@ class FetchController extends Controller
             if ($user->role === 'administrator') {
                 $query = Tracker::select('id', 'unique_id', 'name')->where('status', 'active');
             } elseif ($user->role === 'admin') {
-                $query = Tracker::select('id', 'unique_id', 'name')->where('user_id', $user->unique_id)->where('status', 'active');
+                $query = Tracker::select('id', 'unique_id', 'name')->where('user_id', $user->unique_id)->where('status', 'active')->orWhere('visiblity', 'public');
             } else {
                 // Invalid role, return error message
                 return response()->json([

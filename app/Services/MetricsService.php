@@ -53,11 +53,8 @@ class MetricsService
             ->join('click_details', 'clicks.id', '=', 'click_details.click_id')
             ->where("click_details.{$model}_id", $uniqueId)
             ->whereBetween('clicks.created_at', [$start_date, $end_date]);
-        if ($clickColumn) {
-            $clicksQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
-        }
 
-        $clicksCount = $clicksQuery->count();
+
 
         $conversionsQuery = DB::table('conversions')
             ->join('click_details', 'conversions.click_id', '=', 'click_details.click_id')
@@ -66,10 +63,14 @@ class MetricsService
             ->where('click_details.status', 'approved');
 
         if ($clickColumn) {
-            $conversionsQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
+            $clicksQuery->where("click_details.{$clickColumn}", $this->user->unique_id)
+            ;
+            $conversionsQuery->where("click_details.{$clickColumn}", $this->user->unique_id)
+            ;
         }
 
         $conversionsCount = $conversionsQuery->count();
+        $clicksCount = $clicksQuery->count();
         $cvr = $clicksCount > 0 ? ($conversionsCount / $clicksCount) * 100 : 0;
 
         return [
@@ -99,8 +100,10 @@ class MetricsService
             ->whereBetween('clicks.created_at', [$yesterday, $endOfYesterday]);
 
         if ($clickColumn) {
-            $todayQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
-            $yesterdayQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
+            $todayQuery->where("click_details.{$clickColumn}", $this->user->unique_id)
+            ;
+            $yesterdayQuery->where("click_details.{$clickColumn}", $this->user->unique_id)
+            ;
         }
         $todayCount = $todayQuery->count();
         $yesterdayCount = $yesterdayQuery->count();
@@ -143,9 +146,17 @@ class MetricsService
 
         // Step 5: Apply user-specific filtering if $clickColumn is provided
         if ($clickColumn) {
-            $clicksQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
-            $conversionsQuery->where("click_details.{$clickColumn}", $this->user->unique_id);
+            $clicksQuery->where(function ($query) use ($clickColumn) {
+                $query->where("click_details.{$clickColumn}", $this->user->unique_id)
+                    ->orWhere("click_details.user_id", $this->user->unique_id);
+            });
+
+            $conversionsQuery->where(function ($query) use ($clickColumn) {
+                $query->where("click_details.{$clickColumn}", $this->user->unique_id)
+                    ->orWhere("click_details.user_id", $this->user->unique_id);
+            });
         }
+
 
         // Step 6: Get the results from the queries
         $clicksData = $clicksQuery->get();

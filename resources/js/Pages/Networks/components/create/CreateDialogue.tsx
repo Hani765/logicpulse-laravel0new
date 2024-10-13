@@ -11,6 +11,7 @@ import {
 import Form from "./Form";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlusIcon } from "lucide-react";
 
 export default function Create() {
     const [fetching, setFetching] = useState(true);
@@ -30,34 +31,35 @@ export default function Create() {
         }
     };
     return (
-        <div className="bg-white border border-gray-200 dark:border-gray-700 dark:bg-gray-900 w-full shadow-sm flex justify-between items-center p-2 rounded">
-            <h3 className="font-semibold">Networks</h3>
-            <Credenza>
-                <CredenzaTrigger asChild>
-                    <Button variant="gooeyRight" onClick={fetchTrackers}>
-                        Create new
-                    </Button>
-                </CredenzaTrigger>
-                <CredenzaContent
-                    onInteractOutside={(e: any) => e.preventDefault()}
+        <Credenza>
+            <CredenzaTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-fit "
+                    onClick={fetchTrackers}
                 >
-                    <CredenzaHeader>
-                        <CredenzaTitle>Add Network</CredenzaTitle>
-                        <CredenzaDescription>
-                            Use this form to add a new network to your tracker
-                            system. Provide the necessary details to ensure
-                            accurate and effective tracking of your affiliate
-                            marketing campaigns.
-                        </CredenzaDescription>
-                    </CredenzaHeader>
-                    {fetching ? (
-                        <CreateNetworkSkeleton />
-                    ) : (
-                        <Form trackers={trackers} />
-                    )}
-                </CredenzaContent>
-            </Credenza>
-        </div>
+                    <PlusIcon className="mr-2 size-4" aria-hidden="true" />
+                    Add New Network
+                </Button>
+            </CredenzaTrigger>
+            <CredenzaContent onInteractOutside={(e: any) => e.preventDefault()}>
+                <CredenzaHeader>
+                    <CredenzaTitle>Add Network</CredenzaTitle>
+                    <CredenzaDescription>
+                        Use this form to add a new network to your tracker
+                        system. Provide the necessary details to ensure accurate
+                        and effective tracking of your affiliate marketing
+                        campaigns.
+                    </CredenzaDescription>
+                </CredenzaHeader>
+                {fetching ? (
+                    <CreateNetworkSkeleton />
+                ) : (
+                    <Form trackers={trackers} />
+                )}
+            </CredenzaContent>
+        </Credenza>
     );
 }
 

@@ -1,6 +1,6 @@
 import { Progress } from "../ui/progress";
 
-export default function ProgressComponent({ progress }: { progress: number }) {
+export default function ProgressComponent({ progress }: { progress: any }) {
     return (
         <div className="space-y-1">
             <Progress value={progress} />

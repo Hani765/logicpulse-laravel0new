@@ -3,8 +3,10 @@ import { Card } from "../ui/card";
 import { useState, useEffect, useRef, MutableRefObject } from "react";
 import { Transition } from "@headlessui/react";
 import { Link } from "@inertiajs/react";
+import NotificationsComponent from "@/Pages/notify";
+import { User } from "@/types";
 
-export default function NotificationsModel() {
+export default function NotificationsModel({ user }: { user: User }) {
     const [open, setOpen] = useState<boolean>(false);
     const cardRef: MutableRefObject<HTMLDivElement | null> =
         useRef<HTMLDivElement>(null);
@@ -27,6 +29,7 @@ export default function NotificationsModel() {
 
     return (
         <div className="relative">
+            <NotificationsComponent user={user} />
             <button onClick={() => setOpen(!open)}>
                 <FaBell />
             </button>

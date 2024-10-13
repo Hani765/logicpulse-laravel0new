@@ -4,16 +4,20 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Log;
 
-Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+Broadcast::channel('App.Models.User.{unique_id}', function ($user, $unique_id) {
+    return (int) $user->id === (int) $unique_id;
+});
+Broadcast::channel('notifications.{unique_id}', function ($user, $unique_id) {
+    return (int) $user->unique_id === (int) $unique_id;
 });
 
-Broadcast::channel('admin.notifications', function ($user) {
-    return $user->role === 'administrator';
+Broadcast::channel('notifications.role.{role}', function ($user, $role) {
+    return $user->role === $role;
 });
-Broadcast::channel('notifications.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id; // make sure user is authorized to access
+Broadcast::channel('clickConversion.{unique_id}', function ($user, $unique_id) {
+    return (int) $user->unique_id === (int) $unique_id;
 });
-Broadcast::channel('message', function ($user) {
-    return Auth::check();
+
+Broadcast::channel('clickConversion.role.{role}', function ($user, $role) {
+    return $user->role === $role;
 });

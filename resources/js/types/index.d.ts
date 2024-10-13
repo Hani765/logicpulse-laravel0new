@@ -1,5 +1,6 @@
 export interface User {
     id: number;
+    unique_id: string;
     first_name: string;
     last_name: string;
     username: string;
@@ -50,6 +51,7 @@ export type DomainsType = {
     clicks: number;
     conversions: number;
     cvr: number;
+    progress: number;
     chart_data: array;
     status: string;
     created_at: string;
@@ -64,7 +66,7 @@ export type TrackerType = {
     clicks: number;
     conversions: number;
     cvr: number;
-    status: number;
+    status: string;
     created_at: string;
     updated_at: string;
 };
@@ -116,4 +118,27 @@ type SettingsType = {
     status: string;
     created_at: string;
     updated_at: string;
+};
+type ClickType = {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    click_id: number;
+    offer_id: string;
+    network_id: string;
+    tracker_id: string;
+    domain_id: string;
+    user_id: string;
+    manager_id: any;
+    admin_id: any;
+    ip_address: string;
+    source_id: string;
+    country: string;
+    city: string;
+    device: string;
+    device_version: any;
+    browser: string;
+    version: any;
+    user_agent: any;
+    status: string;
 };

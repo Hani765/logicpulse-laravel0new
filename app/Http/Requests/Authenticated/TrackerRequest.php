@@ -23,8 +23,9 @@ class TrackerRequest extends FormRequest
     {
         return [
             'name' => 'required|unique:trackers',
-            'param' => 'required',
-            'value' => 'required',
+            'param' => ['required', 'string', 'max:255', 'regex:/^\S*$/'], // No spaces allowed
+            'value' => ['required', 'string', 'max:255', 'regex:/^\S*$/'], // No spaces allowed
+            'visiblity' => 'required|string',
         ];
     }
 }

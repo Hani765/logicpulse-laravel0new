@@ -23,6 +23,7 @@ class DomainRequest extends FormRequest
     {
         return [
             'name' => 'required|url|min:10|unique:domains,name',
+            'visiblity' => 'required|string',
         ];
     }
 }

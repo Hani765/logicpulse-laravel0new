@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Authenticated;
 
-use App\Events\NotificationSent;
+use App\Events\ClickConversionRecieved;
 use App\Http\Controllers\Controller;
 use App\Models\Click;
 use App\Models\ClickDetail;
+use App\Models\Domain;
 use App\Models\Network;
 use App\Models\Offers;
 use App\Models\Source;
@@ -36,6 +37,8 @@ class RedirectController extends Controller
         $userId = $request['p'];
         $offerId = $request['o'];
         $source_id = $request['u'];
+        $current_url = url()->current();
+
         if ($userId && $offerId) {
 
             if ($source_id) {
@@ -44,7 +47,7 @@ class RedirectController extends Controller
                 $source = '';
             }
             // Fetch user data
-            $user = User::select('role', 'manager_id', 'admin_id', 'username')
+            $user = User::select('role', 'manager_id', 'admin_id', 'username', 'unique_id')
                 ->where('unique_id', $userId)
                 ->where('status', 'active')
                 ->first();
@@ -53,62 +56,74 @@ class RedirectController extends Controller
                 $offer = Offers::where('id', $offerId)->where('status', 'active')->first();
 
                 if ($offer) {
-                    // Fetch network and tracker data
-                    $network = Network::where('unique_id', $offer->network_id)->first();
-                    $tracker = Tracker::where('unique_id', $network->tracker_id)->first();
+                    $domain = Domain::where('unique_id', $offer->domain_id)->first();
+                    if ($domain->name === $current_url) {                       // Fetch network and tracker data
+                        $network = Network::where('unique_id', $offer->network_id)->first();
+                        $tracker = Tracker::where('unique_id', $network->tracker_id)->first();
+                        if (
+                            $network && $tracker && // Make sure both $network and $tracker are not null
+                            $network->status === 'active' &&
+                            $tracker->status === 'active' &&
+                            $domain->status === 'active'
+                        ) {
+                            // Determine user's accessible offers based on role
+                            $offersQuery = $this->getAccessibleOffers($user, $userId);
+                            if (!empty($offersQuery) || str_contains($offersQuery, $offerId)) {
+                                $userDetails = $this->userDetailService->getUserDetails($request);
+                                $create = Click::create();
+                                $unique_id = Str::uuid();
+                                $role = $user->role;
 
-                    if ($network || $tracker) {
-                        // Determine user's accessible offers based on role
-                        $offersQuery = $this->getAccessibleOffers($user, $userId);
-                        if (!empty($offersQuery) || str_contains($offersQuery, $offerId)) {
-                            $userDetails = $this->userDetailService->getUserDetails($request);
-                            $create = Click::create();
-                            $unique_id = Str::uuid();
-                            $payload = [
-                                'unique_id' => $unique_id,
-                                'click_id' => $create->id,
-                                'offer_id' => $offer->unique_id,
-                                'network_id' => $offer->network_id,
-                                'tracker_id' => $tracker->unique_id,
-                                'domain_id' => $offer->domain_id,
-                                'user_id' => $userId,
-                                'manager_id' => $user->manager_id,
-                                'admin_id' => $user->admin_id,
-                                'source_id' => $source || '',
-                                'ip_address' => $userDetails['ip_address'],
-                                'country' => $userDetails['country'],
-                                'state' => $userDetails['state'],
-                                'city' => $userDetails['city'],
-                                'postal' => $userDetails['postal'],
-                                'latitude' => $userDetails['latitude'],
-                                'longitude' => $userDetails['longitude'],
-                                'device' => $userDetails['device'],
-                                'device_type' => $userDetails['device_type'],
-                                'platform' => $userDetails['platform'],
-                                'platform_version' => $userDetails['platform_version'],
-                                'browser' => $userDetails['browser'],
-                                'browser_version' => $userDetails['browser_version'],
-                                'is_robot' => $userDetails['is_robot'],
-                                'user_agent' => $userDetails['user_agent'],
-                            ];
-                            $detailsCreate = ClickDetail::create($payload);
-                            $notificationData = [
-                                'user_id' => '102',
-                                'message' => $user->username . ' received a new notification on ' . $offer->offer_name,
-                            ];
-                            NotificationSent::dispatch($notificationData);
-                            if ($detailsCreate) {
-                                $url = 'https://www.google.com';
-                                $offerUrl = $url . '?' . $tracker->param . '=' . $create->id;
-                                return 'send';
+                                $payload = [
+                                    'unique_id' => $unique_id,
+                                    'click_id' => $create->id,
+                                    'offer_id' => $offer->unique_id,
+                                    'network_id' => $offer->network_id,
+                                    'tracker_id' => $tracker->unique_id,
+                                    'domain_id' => $offer->domain_id,
+                                    'user_id' => $userId,
+                                    'manager_id' => $user->manager_id,
+                                    'admin_id' => $user->admin_id,
+                                    'source_id' => $source || '',
+                                    'ip_address' => $userDetails['ip_address'],
+                                    'country' => $userDetails['country'],
+                                    'state' => $userDetails['state'],
+                                    'city' => $userDetails['city'],
+                                    'postal' => $userDetails['postal'],
+                                    'latitude' => $userDetails['latitude'],
+                                    'longitude' => $userDetails['longitude'],
+                                    'device' => $userDetails['device'],
+                                    'device_type' => $userDetails['device_type'],
+                                    'platform' => $userDetails['platform'],
+                                    'platform_version' => $userDetails['platform_version'],
+                                    'browser' => $userDetails['browser'],
+                                    'browser_version' => $userDetails['browser_version'],
+                                    'is_robot' => $userDetails['is_robot'],
+                                    'user_agent' => $userDetails['user_agent'],
+                                ];
+                                $detailsCreate = ClickDetail::create($payload);
+                                if ($detailsCreate) {
+                                    $userIds = explode(',', $user->unique_id . ',' . $user->manager_id . ',' . ',' . $user->admin_id);
+                                    $roles = explode(',', 'administrator'); // Convert comma-separated string to array
+
+                                    event(new ClickConversionRecieved([
+                                        'message' => 'conversion',
+                                        'user_id' => $userIds,
+                                    ], $userIds, $roles));
+                                    $url = 'https://www.google.com';
+                                    $offerUrl = $url . '?' . $tracker->param . '=' . $create->id;
+                                    return 'send';
+                                } else {
+                                    $error = 'Something went wrong! Please try again later or contact with service provider.';
+                                }
                             } else {
-                                $error = 'Something went wrong! Please try again later or contact with service provider.';
+                                $error = 'The user has not been granted access to this offer.';
                             }
                         } else {
-                            $error = 'The user has not been granted access to this offer.';
+                            $error = 'The offer URL is not correct. Please try again with a correct URL.';
                         }
                     } else {
-                        $error = 'The offer URL is not correct. Please try again with a correct URL.';
+                        $error = 'This offer is not accesble with that url. Please try again with a correct URL.';
                     }
                 } else {
                     $error = 'The offer Id is not correct. Please try again with a correct URL.';

@@ -4,15 +4,16 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { OfferType } from "@/types";
 import { Head } from "@inertiajs/react";
-import React from "react";
 import { MdOutlineErrorOutline } from "react-icons/md";
 
 export default function index({ error }: { error: string }) {
     return (
         <div className="flex justify-center items-center h-screen">
-            <Head title={error} />
+            <Head>
+                <title>{error}</title>
+                <meta name="description" content={error} />
+            </Head>
             <Card className="w-full sm:max-w-lg">
                 <CardHeader>
                     <CardTitle className="w-full flex items-center justify-center">

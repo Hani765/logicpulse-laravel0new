@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Authenticated;
 
+use App\Events\ClickConversionRecieved;
 use App\Events\DomainAdded;
 use App\Events\NotificationSent as EventsNotificationSent;
 use Carbon\Carbon;
@@ -21,7 +22,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use NotificationSent;
+use App\Events\NotificationSent;
+use App\Services\CreateNotificationService;
 
 class DomainController extends Controller
 {
@@ -63,7 +65,7 @@ class DomainController extends Controller
             }
 
             // Query domains based on the user's role
-            $domainsQuery = $this->getDomainsQuery($roleToColumnMap[$user->role]);
+            $domainsQuery = $this->getDomainsQuery();
 
             if ($q) {
                 $domainsQuery->where('name', 'like', "%$q%");
@@ -76,7 +78,6 @@ class DomainController extends Controller
             $domains = $domainsQuery->paginate($perPage, ['*'], 'page', $page);
             $response = [];
             $clickColumn = $roleToColumnMap[$user->role];
-
             foreach ($domains as $domain) {
                 $metrics = $metricsService->getClicksAndConversions(
                     'domain',
@@ -124,14 +125,14 @@ class DomainController extends Controller
     }
 
 
-    private function getDomainsQuery(string $clickColumn)
+    private function getDomainsQuery()
     {
         $user = Auth::user();
 
         if ($user->role === 'administrator') {
-            return Domain::query();
+            return Domain::query()->orderByDesc('created_at');
         } elseif ($user->role === 'admin') {
-            return Domain::query()->where('user_id', $user->unique_id);
+            return Domain::query()->where('user_id', $user->unique_id)->orWhere('visiblity', 'public')->orderByDesc('created_at');
         } else {
             abort(403, "Invalid role. You are not allowed to access this resource.");
         }
@@ -139,60 +140,64 @@ class DomainController extends Controller
 
     public function store(DomainRequest $request)
     {
+        $notificationSerive = new CreateNotificationService();
+
         $payload = $request->validated();
-        try {
-            $user = $request->user();
-            $payload['user_id'] = $user->unique_id;
-            $payload["unique_id"] = Str::uuid();
-            $domain = Domain::create($payload);
-            $notificationData = $domain;
-            return back()->with('status', 'domain-created');
-        } catch (\Exception $err) {
-            return response()->json([
-                "message" => "Something went wrong. Please try again later!"
-            ], 500);
+        $user = $request->user();
+        $payload['user_id'] = $user->unique_id;
+        $payload["unique_id"] = Str::uuid();
+        $domain = Domain::create($payload);
+        $roles = '';
+        if ($user->role !== 'administrator') {
+            $roles = 'administrator';
+            $message = $user->username . ' added a new Domain "' . $domain->name . '"';
+
+        } else {
+            if ($domain->visiblity == 'public') {
+                $roles = 'admin';
+            }
+            $message = 'A new domain has been added! Go to domains page and check it out.';
         }
+
+        $notificationSerive->create($message, '', $roles);
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
+
     }
 
     public function show($uniqueId)
     {
-        try {
-            if (!Auth::check()) {
-                return response()->json(['message' => 'Unauthenticated'], 401);
-            }
-            // Retrieve the domain based on the unique_id column
-            $domain = Domain::where('unique_id', $uniqueId)->first();
 
-            if ($domain) {
-                // Retrieve user IDs associated with the domain
-                $userIds = DB::table('users')->where('domain_id', $domain->unique_id)->pluck('unique_id')->implode(',');
+        // Retrieve the domain based on the unique_id column
+        $domain = Domain::where('unique_id', $uniqueId)->first();
 
-                // Return the response data as a JSON response
-                return response()->json([
-                    'domain' => [
-                        'id' => $domain->id,
-                        'unique_id' => $domain->unique_id,
-                        'name' => $domain->name,
-                        'status' => $domain->status,
-                        'created_at' => $domain->created_at,
-                        'updated_at' => $domain->updated_at,
-                    ],
-                    'user_ids' => $userIds,
-                ]);
-            } else {
-                // Return an error response if the resource is not found
-                return response()->json(['error' => 'Resource not found'], 404);
-            }
-        } catch (\Exception $err) {
-            return response()->json(['error' => 'Something went wrong'], 500);
+        if ($domain) {
+            // Retrieve user IDs associated with the domain
+            $userIds = DB::table('users')->where('domain_id', $domain->unique_id)->pluck('unique_id')->implode(',');
+
+            // Return the response data as a JSON response
+            return response()->json([
+                'domain' => [
+                    'id' => $domain->id,
+                    'unique_id' => $domain->unique_id,
+                    'name' => $domain->name,
+                    'status' => $domain->status,
+                    'created_at' => $domain->created_at,
+                    'updated_at' => $domain->updated_at,
+                ],
+                'user_ids' => $userIds,
+            ]);
+        } else {
+            // Return an error response if the resource is not found
+            return response()->json(['error' => 'Resource not found'], 404);
         }
+
     }
 
     public function update(Request $request, string $unique_id)
     {
-        if (!Auth::check()) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $notificationSerive = new CreateNotificationService();
+
 
         // Find the domain
         $domain = Domain::where('unique_id', $unique_id)->firstOrFail();
@@ -220,7 +225,9 @@ class DomainController extends Controller
         User::whereIn('unique_id', $selectedUserIds)
             ->update(['domain_id' => $domain->unique_id]);
 
-        return back()->with('status', 'domain-updated');
+
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
     }
 
 
@@ -229,21 +236,16 @@ class DomainController extends Controller
      */
     public function destroy(Request $request, $uniqueId)
     {
-        try {
-            // Authentication check
-            if (!Auth::check()) {
-                return response()->json(['message' => 'Unauthenticated'], 401);
-            }
 
-            // Find and delete the domain
-            $domain = Domain::where('unique_id', $uniqueId)->firstOrFail();
-            $domain->delete();
-            User::where('domain_id', $domain->unique_id)
-                ->update(['domain_id' => null]);
-            return back()->with('status', 'Domain has been created!');
-        } catch (\Exception $err) {
-            return response()->json(['message' => 'Failed to delete domain'], 500);
-        }
+        $notificationSerive = new CreateNotificationService();
+        // Find and delete the domain
+        $domain = Domain::where('unique_id', $uniqueId)->firstOrFail();
+        $domain->delete();
+        User::where('domain_id', $domain->unique_id)
+            ->update(['domain_id' => null]);
+
+        $roles = 'administrator,admin';
+        $notificationSerive->clickConversoin('', $roles);
     }
     public function deleteRows(Request $request)
     {

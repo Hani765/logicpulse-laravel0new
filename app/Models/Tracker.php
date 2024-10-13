@@ -14,6 +14,7 @@ class Tracker extends Model
         "name",
         "param",
         "value",
-        "status"
+        "status",
+        "visiblity"
     ];
 }
