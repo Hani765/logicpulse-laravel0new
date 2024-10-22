@@ -20,6 +20,7 @@ use App\Http\Controllers\Authenticated\OnBordingController;
 use App\Http\Controllers\Authenticated\RoutesController;
 use App\Http\Controllers\Authenticated\UrlTesterController;
 use App\Http\Controllers\Authenticated\Dashboard\MessageController;
+use App\Http\Controllers\MetadataController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,21 +30,21 @@ use Inertia\Inertia;
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
-Route::apiResources([
+Route::Resources([
     "/redirect" => RedirectController::class,
 ]);
 
 Route::middleware('auth')->group(function () {
 
     Route::middleware(['checkRole:administrator'])->group(function () {
-        Route::apiResources([
+        Route::Resources([
             "/settings/account" => AccountsController::class,
             "/dashboard/sources" => SourceController::class,
             "/dashboard/url-tester" => UrlTesterController::class,
         ]);
     });
     Route::middleware(['checkRole:administrator,admin'])->group(function () {
-        Route::apiResources([
+        Route::Resources([
             "/dashboard/domains" => DomainController::class,
             "/dashboard/trackers" => TrackersController::class,
             "/dashboard/networks" => NetworkController::class,
@@ -57,7 +58,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware(['checkRole:administrator,admin,manager'])->group(function () {
-        Route::apiResources([
+        Route::Resources([
             "/dashboard/users" => UserController::class,
         ]);
         Route::get("/fetch-users", [
@@ -69,7 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/fetch/domains', [FetchController::class, 'fetchFilterDomains']);
     });
 
-    Route::apiResources([
+    Route::Resources([
         "/dashboard/offers" => OffersController::class,
         "/dashboard/market-place" => MarketPlaceController::class,
         "/onboarding" => OnBordingController::class,
@@ -90,6 +91,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/routes', [RoutesController::class, 'getRoutes']);
     Route::get('/click-conversion-count', [ClickController::class, 'getClickCount']);
 
+    Route::get('/fetch-metadata', [MetadataController::class, 'fetchMetadata']);
     Route::get('/update/NotifcationSettings', [ProfileController::class, 'updateNotificationSettings']);
     Route::get('/get/message', [DashboardMessage::class, 'index']);
 });

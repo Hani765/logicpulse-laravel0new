@@ -11,6 +11,7 @@ use App\Models\Offers;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Services\MetricsService;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -247,7 +248,10 @@ class OffersController extends Controller
         }
     }
 
-
+    public function create()
+    {
+        return Inertia::render('Offers/components/create/index');
+    }
 
     /**
      * Display the specified resource.

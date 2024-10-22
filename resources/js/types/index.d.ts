@@ -142,3 +142,11 @@ type ClickType = {
     user_agent: any;
     status: string;
 };
+interface MetaDataType {
+    title: string;
+    description: string;
+    image: string;
+    keywords: string;
+    author: string;
+    canonical: string;
+}
