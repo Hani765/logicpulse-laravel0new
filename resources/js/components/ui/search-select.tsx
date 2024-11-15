@@ -29,6 +29,7 @@ export default function SearchSelect({
     onSelect,
     label,
     description,
+    bottomMessage,
     errorMessage,
 }: {
     items: any;
@@ -36,6 +37,7 @@ export default function SearchSelect({
     selected_value: string;
     onSelect: any;
     description?: string;
+    bottomMessage?: string;
     errorMessage?: string;
 }) {
     const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ export default function SearchSelect({
     const filteredItems = items.filter(
         (item: any) =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.unique_id.toLowerCase().includes(searchTerm.toLowerCase())
+            item.unique_id.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     return (
         <div className="space-y-1 pt-1">
@@ -77,13 +79,13 @@ export default function SearchSelect({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full justify-between"
+                        className="w-full justify-between bg-gray-50 dark:bg-gray-800 dark:border-white"
                     >
                         <span className="overflow-x-hidden">
                             {selected_value !== ""
                                 ? items.find(
                                       (tracker: any) =>
-                                          tracker.unique_id === selected_value
+                                          tracker.unique_id === selected_value,
                                   )?.name
                                 : `${label}...`}
                         </span>
@@ -96,7 +98,7 @@ export default function SearchSelect({
                             <FaSearch className="text-muted text-lg ml-2 absolute left-1 top-3" />
                             <Input
                                 placeholder={`${label}...`}
-                                className="border-none min-w-full rounded-none focus-visible:ring-0 pl-8 focus-visible:ring-offset-0"
+                                className="border-none w-full rounded-none focus-visible:ring-0 pl-8 focus-visible:ring-offset-0"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -119,7 +121,7 @@ export default function SearchSelect({
                                                 selected_value ===
                                                     item.unique_id
                                                     ? "opacity-100"
-                                                    : "opacity-0"
+                                                    : "opacity-0",
                                             )}
                                         />
                                         {item.name}
@@ -132,6 +134,9 @@ export default function SearchSelect({
             </Popover>
             {errorMessage && (
                 <p className="text-sm text-red-500 mt-1">{errorMessage}</p>
+            )}
+            {bottomMessage && (
+                <p className="text-sm text-gray-500 mt-1">{bottomMessage}</p>
             )}
         </div>
     );

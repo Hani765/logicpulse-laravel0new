@@ -24,8 +24,8 @@ export default function AdminPanelLayout({
             <Sidebar role={role} webName={webName} />
             <main
                 className={cn(
-                    "min-h-[calc(100vh_-_56px)] transition-[margin-left] ease-in-out duration-300",
-                    sidebar?.isOpen === false ? "lg:ml-[50px]" : "lg:ml-60"
+                    "min-h-[calc(100vh_-_56px)] transition-[margin-left] p-0 md:p-2 ease-in-out duration-300",
+                    sidebar?.isOpen === false ? "lg:ml-[50px]" : "lg:ml-60",
                 )}
             >
                 {children}
@@ -33,7 +33,7 @@ export default function AdminPanelLayout({
             <footer
                 className={cn(
                     "transition-[margin-left] ease-in-out duration-300",
-                    sidebar?.isOpen === false ? "lg:ml-[50px]" : "lg:ml-60"
+                    sidebar?.isOpen === false ? "lg:ml-[50px]" : "lg:ml-60",
                 )}
             >
                 <Footer />

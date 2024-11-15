@@ -20,6 +20,11 @@ export interface User {
     role: string;
     profile_image: string;
     email_verified_at: string;
+    isVerified: string;
+    status: string;
+    notification: string;
+    rate: string;
+    domain_id: string;
 }
 
 export type PageProps<
@@ -74,14 +79,26 @@ export type OfferType = {
     id: string;
     unique_id: string;
     name: string;
+    title: string;
+    description: string;
+    keywords: string;
     offer_name: string;
+    image: string;
     age: string;
     rate: string;
+    encryption: string;
+    network_id: string;
+    domain_id: string;
+    category_id: string;
+    urls: [];
+    countries: string;
+    proxy: string;
     clicks: string;
     conversions: string;
     cvr: string;
     url: string;
     status: string;
+    appliableFor: string;
 };
 export type UserType = {
     id: string;
@@ -150,3 +167,8 @@ interface MetaDataType {
     author: string;
     canonical: string;
 }
+type FetchResult<T> = {
+    data: T | null;
+    error: Error | null;
+    isLoading: boolean;
+};

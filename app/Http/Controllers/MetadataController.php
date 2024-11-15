@@ -34,4 +34,29 @@ class MetadataController extends Controller
             return response()->json(['error' => 'Failed to fetch metadata', 'message' => $e->getMessage()], 500);
         }
     }
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+        ]);
+
+        // Get the uploaded file
+        $file = $request->file('image');
+
+        // Define the path where the image will be saved
+        $destinationPath = public_path('assets/images');
+
+        // Generate a unique name for the image
+        $imageName = time() . '_' . $file->getClientOriginalName();
+
+        // Move the file to the assets/images directory
+        $file->move($destinationPath, $imageName);
+
+        // Return the path of the uploaded image
+        return response()->json([
+            'message' => 'Image uploaded successfully',
+            'path' => '/assets/images/' . $imageName,
+        ]);
+    }
+
 }

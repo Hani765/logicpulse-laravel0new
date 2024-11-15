@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('user_id')->index();
             $table->string('name')->index();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('visiblity', ['private', 'public'])->default('private');
             $table->timestamps();
 
             // Adding foreign key constraint with ON DELETE CASCADE

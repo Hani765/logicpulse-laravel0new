@@ -10,12 +10,13 @@ return new class extends Migration {
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->string('type');
-            $table->string('sender_id'); // ID of the user who sent the notification
-            $table->string('username'); // ID of the user who sent the notification
-            $table->text('data');
-            $table->string('user_ids');
-            $table->timestamp('read_at')->nullable();
+            $table->enum('type', ['info', 'alert', 'succes', 'primary'])->default('info');
+            $table->string('username');
+            $table->text('message');
+            $table->text('user_ids');
+            $table->text('roles');
+            $table->text('in_view')->nullable();
+            $table->text('read_at')->nullable();
             $table->timestamps();
         });
     }

@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use App\Services\CreateNotificationService;
 
 class RedirectController extends Controller
 {
@@ -33,12 +34,12 @@ class RedirectController extends Controller
      */
     public function index(Request $request)
     {
+        $notificationSerive = new CreateNotificationService();
         $error = false;
         $userId = $request['p'];
         $offerId = $request['o'];
         $source_id = $request['u'];
         $current_url = url()->current();
-
         if ($userId && $offerId) {
 
             if ($source_id) {
@@ -57,7 +58,8 @@ class RedirectController extends Controller
 
                 if ($offer) {
                     $domain = Domain::where('unique_id', $offer->domain_id)->first();
-                    if ($domain->name === $current_url) {                       // Fetch network and tracker data
+                    $offer_url = $domain->name . '/redirect';
+                    if ($offer_url === $current_url) {                       // Fetch network and tracker data
                         $network = Network::where('unique_id', $offer->network_id)->first();
                         $tracker = Tracker::where('unique_id', $network->tracker_id)->first();
                         if (
@@ -81,6 +83,7 @@ class RedirectController extends Controller
                                     'network_id' => $offer->network_id,
                                     'tracker_id' => $tracker->unique_id,
                                     'domain_id' => $offer->domain_id,
+                                    'rate' => 100,
                                     'user_id' => $userId,
                                     'manager_id' => $user->manager_id,
                                     'admin_id' => $user->admin_id,
@@ -103,18 +106,50 @@ class RedirectController extends Controller
                                 ];
                                 $detailsCreate = ClickDetail::create($payload);
                                 if ($detailsCreate) {
-                                    $userIds = explode(',', $user->unique_id . ',' . $user->manager_id . ',' . ',' . $user->admin_id);
-                                    $roles = explode(',', 'administrator'); // Convert comma-separated string to array
+                                    $urls = $offer->urls; // Assuming $offer->urls returns an array like the one you shared
 
-                                    event(new ClickConversionRecieved([
-                                        'message' => 'conversion',
-                                        'user_id' => $userIds,
-                                    ], $userIds, $roles));
-                                    $url = 'https://www.google.com';
-                                    $offerUrl = $url . '?' . $tracker->param . '=' . $create->id;
-                                    return 'send';
+                                    // Get the user's device type from $userDetails
+                                    $userDeviceType = $userDetails['device_type'];
+
+                                    // Find a URL that matches the user's device type
+                                    $matchedUrl = null;
+                                    foreach ($urls as $urlObj) {
+                                        if ($urlObj['deviceType'] === $userDeviceType) {
+                                            $matchedUrl = $urlObj['url'];
+                                            break;
+                                        }
+                                    }
+
+                                    // If no exact match, check for 'all' device type
+                                    if (!$matchedUrl) {
+                                        foreach ($urls as $urlObj) {
+                                            if ($urlObj['deviceType'] === 'all') {
+                                                $matchedUrl = $urlObj['url'];
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // If a matching URL is found, redirect to it
+                                    if ($matchedUrl) {
+                                        $user_ids = $userId . ',' . $user->manager_id . ',' . $user->admin_id;
+                                        if($role !== 'administrator'){
+                                            $roles = 'administrator';
+
+                                        }else{
+                                        $roles = '';
+                                        }
+                                        $notificationSerive->clickConversoin($user_ids, $roles);
+                                        return $matchedUrl;
+                                        // return redirect()->away($matchedUrl);
+                                    } else {
+                                        // If no URL is found, return an error message
+                                        return response()->json([
+                                            'error' => 'No suitable URL found for your device type. Please contact support.',
+                                        ], 404);
+                                    }
                                 } else {
-                                    $error = 'Something went wrong! Please try again later or contact with service provider.';
+                                    $error = 'Something went wrong! Please try again later or contact the service provider.';
                                 }
                             } else {
                                 $error = 'The user has not been granted access to this offer.';

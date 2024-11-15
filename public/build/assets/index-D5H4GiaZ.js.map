@@ -1,0 +1,1 @@
+{"version":3,"file":"index-D5H4GiaZ.js","sources":["../../../resources/js/Pages/Onboarding/index.tsx"],"sourcesContent":["import React from \"react\";\r\nimport { BrowserRouter, Route, Routes } from \"react-router-dom\";\r\nexport default function index() {\r\n    return <div></div>;\r\n}\r\n"],"names":["index"],"mappings":"sCAEA,SAAwBA,GAAQ,CAC5B,aAAQ,MAAI,EAAA,CAChB"}

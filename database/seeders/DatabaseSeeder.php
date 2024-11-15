@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         // Domain::factory(1000)->create();
         // Offers::factory(100)->create();
         // Click::factory(1000)->create();
-        // Category::factory(100)->create();
+        Category::factory(100)->create();
         // Conversion::factory(1000)->create();
         // User::factory(100)->create();
         // Notification::factory(50)->create();

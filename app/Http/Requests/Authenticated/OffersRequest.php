@@ -23,20 +23,23 @@ class OffersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'offer_name' => 'required|string|max:255|unique:offers,offer_name',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
+            'title' => 'required|string|max:255|unique:offers,title',
+            'description' => 'required|string|max:3000|min:50',
+            'image' => 'nullable|string',
             'age' => 'required|integer|min:18',
             'rate' => 'required|numeric',
             'encryption' => 'nullable|string',
             'network_id' => 'required|string',
             'domain_id' => 'required|string',
             'category_id' => 'required|string',
-            'details' => 'nullable|string|max:255',
+            'keywords' => 'nullable|string|max:1000',
             'users_ids' => 'nullable|string',
             'urls' => 'array',
             'countries' => 'nullable|string',
             'proxy' => 'required|string',
-            'status' => 'required|string',
+            'status' => 'required|string|in:active,inactive,pause',
+            'appliableFor' => 'required|string|in:everyone,admins,managers,users',
+
         ];
     }
 }

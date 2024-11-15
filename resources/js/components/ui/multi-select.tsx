@@ -12,6 +12,7 @@ import {
 import { Command as CommandPrimitive } from "cmdk";
 import { Checkbox } from "./checkbox";
 import { Input } from "./input";
+import { Label } from "./label";
 
 type Item = {
     unique_id: string;
@@ -46,7 +47,7 @@ export function MultiSelect({
                 .join(",");
             onSelect(updatedSelection);
         },
-        [selectedItems, onSelect]
+        [selectedItems, onSelect],
     );
 
     const handleSelectAll = React.useCallback(() => {
@@ -77,7 +78,7 @@ export function MultiSelect({
                 }
             }
         },
-        [selectedItems, onSelect]
+        [selectedItems, onSelect],
     );
 
     const selectedArray = selectedItems.split(",");
@@ -86,7 +87,7 @@ export function MultiSelect({
         .filter(
             (item) =>
                 item.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-                item.unique_id.toLowerCase().includes(inputValue.toLowerCase())
+                item.unique_id.toLowerCase().includes(inputValue.toLowerCase()),
         );
 
     React.useEffect(() => {
@@ -101,7 +102,7 @@ export function MultiSelect({
             ].join(","); // Remove duplicates
             onSelect(updatedSelection);
         },
-        [selectedItems, onSelect]
+        [selectedItems, onSelect],
     );
 
     return (
@@ -110,9 +111,9 @@ export function MultiSelect({
                 onKeyDown={handleKeyDown}
                 className="overflow-visible bg-transparent"
             >
-                <div className="">
+                <div className="mt-1">
                     <div className="items-center justify-between flex">
-                        <label className="">{label}</label>
+                        <Label className="">{label}</Label>
                         <div className="flex items-center space-x-2">
                             <span>Select All</span>
                             <Checkbox
@@ -125,7 +126,7 @@ export function MultiSelect({
                     <div className="flex gap-2 flex-wrap overflow-y-auto max-h-[200px] group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-1">
                         {selectedArray.map((unique_id) => {
                             const item = items.find(
-                                (f) => f.unique_id === unique_id
+                                (f) => f.unique_id === unique_id,
                             );
                             return item ? (
                                 <Badge key={item.unique_id} variant="secondary">

@@ -1,0 +1,2 @@
+import{j as e,Y as r,C as t,e as i,as as n,f as a}from"./app-CkWx0ziT.js";import{j as l}from"./index-bwGpo7tC.js";function x({error:s}){return e.jsxs("div",{className:"flex justify-center items-center h-screen",children:[e.jsxs(r,{children:[e.jsx("title",{children:s}),e.jsx("meta",{name:"description",content:s})]}),e.jsx(t,{className:"w-full sm:max-w-lg",children:e.jsxs(i,{children:[e.jsxs(n,{className:"w-full flex items-center justify-center",children:[e.jsx(l,{})," Error"]}),e.jsx(a,{children:s})]})})]})}export{x as default};
+//# sourceMappingURL=index-BgwerSSA.js.map

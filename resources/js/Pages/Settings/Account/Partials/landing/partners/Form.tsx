@@ -13,15 +13,13 @@ export default function Form({ partnersData }: { partnersData: any }) {
         name: "",
         website: "",
         description: "",
-        logo: null, // To handle file upload
     });
     const [showForm, setShowForm] = useState(false); // State to toggle form visibility
 
     const handleAddPartner = () => {
-        if (formData.name && formData.logo && formData.description) {
+        if (formData.name && formData.description) {
             const newPartner = {
                 href: formData.website || "#", // Set website to "#" if no URL is provided
-                img: URL.createObjectURL(formData.logo), // Temporary URL for the uploaded logo
                 alt: formData.name,
                 title: formData.name,
                 description: formData.description,
@@ -33,7 +31,6 @@ export default function Form({ partnersData }: { partnersData: any }) {
                 name: "",
                 website: "",
                 description: "",
-                logo: null,
             });
 
             // Hide form after adding
@@ -45,8 +42,6 @@ export default function Form({ partnersData }: { partnersData: any }) {
 
     return (
         <>
-            {JSON.stringify(partnersData)}
-
             {/* Button to show/hide the form */}
             <div className="flex justify-center items-center mt-4">
                 <Button
@@ -63,16 +58,7 @@ export default function Form({ partnersData }: { partnersData: any }) {
                     <li>
                         <div>
                             <Label>Select Logo</Label>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        logo: e.target.value,
-                                    })
-                                }
-                            />
+                            <Input type="file" accept="image/*" />
                         </div>
                     </li>
                     <li>

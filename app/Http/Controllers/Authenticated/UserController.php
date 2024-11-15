@@ -10,6 +10,8 @@ use App\Http\Requests\Authenticated\UserRequest;
 use App\Models\Offers;
 use App\Models\User;
 use App\Models\Users;
+use App\Services\CreateNotificationService;
+use App\Services\MetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -24,38 +26,43 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        return Inertia::render('Users/index', );
+    }
+    public function fetchUsers(Request $request)
+    {
         try {
-            $user = Auth::user();
-            if (!$user) {
-                return response()->json(['error' => 'Unauthenticated'], 401);
-            }
-            $role = $user->role;
-            $userTimezone = $user->time_zone; // Assuming the user's timezone is stored in the user's table
-            $applicationTimezone = Config::get('app.timezone');
-
-            date_default_timezone_set($applicationTimezone);
-
-            // Convert today's date to the user's timezone for filtering
-            $today = Carbon::now($applicationTimezone)->setTimezone($userTimezone)->toDateString();
-
-            $perPage = $request->input('per_page', 50); // Default to 50 items per page
+            $metricsService = new MetricsService();
+            // Get start_date and end_date from the request or set defaults (-7 days to today)
+            $start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $chart_start_date = $request->input('from')
+                ? $metricsService->convertToUserTimezone($request->input('from'))
+                : $metricsService->getDateInUserTimezone('-7 day');
+            $end_date = $request->input('to')
+                ? $metricsService->convertToUserTimezone($request->input('to'))
+                : $metricsService->getTodayDateInUserTimezone();
+            $start_date = Carbon::parse($start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $chart_start_date = Carbon::parse($chart_start_date)->startOfDay(); // 2024-10-09 00:00:00
+            $end_date = Carbon::parse($end_date)->endOfDay(); // 2024-10-09 23:59:59
+            $user = $metricsService->getUser();
+            $perPage = $request->input('per_page', 50);
             $page = $request->input('page', 1);
-            $q = $request->input('q', ''); // Get the search query from the request, default to empty string if not provided
-            $status = $request->input('status', ''); // Get the search query from the request, default to empty string if not provided
-            $userRole = $request->input('role', ''); // Get the search query from the request, default to empty string if not provided
-
+            $q = $request->input('q', '');
+            $status = $request->input('status', '');
             // Explicitly define the mapping of roles to column names
             $roleToColumnMap = [
                 'administrator' => '',
                 'admin' => 'admin_id',
                 'manager' => 'manager_id',
             ];
+            $role = $user->role;
 
             if (!isset($roleToColumnMap[$role])) {
                 return response()->json(['error' => 'Invalid role'], 400);
             }
 
-            $role = $user->role;
+
             if ($role === 'administrator') {
                 $usersQuery = User::query()->where('unique_id', '!=', $user->unique_id);
             } elseif ($role === 'admin') {
@@ -76,36 +83,19 @@ class UserController extends Controller
             if ($status) {
                 $usersQuery->where('status', 'like', "%$status%");
             }
-            if ($userRole) {
-                $usersQuery->where('role', 'like', "%$userRole%");
-            }
+
             $users = $usersQuery->paginate($perPage, ['*'], 'page', $page);
 
             $response = [];
-            $click_column = $roleToColumnMap[$role];
+            $clickColumn = $roleToColumnMap[$role];
             foreach ($users as $fetchUser) {
-                if ($role == 'administrator') {
-                    $clicksCount = DB::table('clicks')
-                        ->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                } else {
-                    $clicksCount = DB::table('clicks')
-                        ->where($click_column, $fetchUser->unique_id)->whereDate('created_at', '=', $today)
-                        ->count();
-
-                    $conversionsCount = DB::table('conversions')
-                        ->where($click_column, $fetchUser->unique_id)->whereDate('created_at', '=', $today)
-                        ->where('status', 'approved')
-                        ->count();
-                }
-
-                $cvr = $clicksCount > 0 ? ($conversionsCount / $clicksCount) * 100 : 0;
-
+                $metrics = $metricsService->getClicksAndConversions(
+                    'user',
+                    $fetchUser->unique_id,
+                    $start_date,
+                    $end_date,
+                    $clickColumn
+                );
                 $response[] = [
                     'id' => $fetchUser->id,
                     'unique_id' => $fetchUser->unique_id,
@@ -117,15 +107,20 @@ class UserController extends Controller
                     'phone' => $fetchUser->phone ?: "",
                     'rate' => $fetchUser->rate ?: "",
                     'age' => $fetchUser->age ?: "",
-                    'clicks' => $clicksCount,
+                    'clicks' => $metrics['clicks'],
+                    'conversions' => $metrics['conversions'],
+                    'cvr' => $metrics['cvr'],
+                    'progress' => $metricsService->getProgressData('user', $fetchUser->unique_id, $clickColumn, ),
+
                     'manager_username' => $fetchUser->manager ? $fetchUser->manager->username : "",
                     'admin_username' => $fetchUser->admin ? $fetchUser->admin->username : "",
-                    'conversions' => $conversionsCount,
                     'created_at' => $fetchUser->created_at,
                     'updated_at' => $fetchUser->updated_at,
                     'status' => $fetchUser->status,
                 ];
             }
+            $chartData = $metricsService->getChartData('user', $chart_start_date, $end_date, $clickColumn, );
+
             $paginationData = [
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
@@ -136,15 +131,24 @@ class UserController extends Controller
                 'prev_page' => $users->currentPage() > 1 ? $users->currentPage() - 1 : null,
             ];
 
-            return Inertia::render('Users/index', [
+            return response()->json([
                 'data' => $response,
                 'pagination' => $paginationData,
+                'chart_data' => $chartData,
             ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+        } catch (\Exception $err) {
+            Log::error(message: "Users index error => " . $err->getMessage());
+            return response()->json([
+                "message" => "Something went wrong. Please try again later!"
+            ], 500);
         }
     }
 
+
+    public function create()
+    {
+        return Inertia::render('Users/components/create/index');
+    }
     /**
      * Store a newly created resource in storage.
      */
@@ -165,23 +169,50 @@ class UserController extends Controller
 
         // Generate unique ID for the new user
         $payload["unique_id"] = (string) Str::uuid();
+        $newUser = User::create($payload);
 
+        // Create the new user
+
+        if (!empty($payload['offer_ids'])) {
+            try {
+
+                // Split offers string into an array of unique IDs
+                DB::table('offer_user')->insert([
+                    'user_unique_id' => $newUser->unique_id,
+                    'offer_unique_ids' => $payload['offer_ids']
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
+            }
+        }
+        return redirect()->intended('/dashboard/users');
+    }
+    public function edit(string $uniqueId)
+    {
         try {
-            // Create the new user
-            $newUser = User::create($payload);
+            // Find the user by unique ID
+            $user = User::where('unique_id', $uniqueId)->first();
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
 
-            // Split offers string into an array of unique IDs
-            DB::table('offer_user')->insert([
-                'user_unique_id' => $newUser->unique_id,
-                'offer_unique_ids' => $payload['offer_ids']
+            // Get the unique IDs of offers associated with the user
+            $offerUniqueIds = DB::table('offer_user')
+                ->where('user_unique_id', $uniqueId)
+                ->pluck('offer_unique_ids')
+                ->first();
+
+            return Inertia::render('Users/components/update/index', [
+                'user' => $user,
+                'offer_unique_ids' => $offerUniqueIds
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
     }
-
     public function update(Request $request, string $uniqueId)
     {
+        $notificationSerive = new CreateNotificationService();
         // Validate request data
         $user = Users::where('unique_id', $uniqueId)->first();
         if (!$user) {
@@ -192,6 +223,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => 'required|string|in:admin,manager,user',
             'phone' => 'required|string|max:20',
+            'profile_image' => 'nullable|string',
             'password' => 'nullable|string|min:6',
             'rate' => 'required|numeric',
             'status' => 'required|string',
@@ -226,7 +258,6 @@ class UserController extends Controller
 
         try {
             // Find the user by unique ID
-            // Update the user with the new data
             $user->update($payload);
 
             // Update the offer_user table
@@ -241,6 +272,8 @@ class UserController extends Controller
                 DB::table('offer_user')->where('user_unique_id', $user->unique_id)->delete();
             }
 
+            $unique_ids = $authUser->unique_id . ',' . $user->unique_id;
+            $notificationSerive->clickConversoin($unique_ids, '');
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }
@@ -282,19 +315,22 @@ class UserController extends Controller
      */
     public function destroy(string $uniqueId)
     {
+        $notificationSerive = new CreateNotificationService();
         try {
+
             // Find the user by unique ID
-            $user = User::where('unique_id', $uniqueId)->first();
-            if (!$user) {
+            $deleteuser = User::where('unique_id', $uniqueId)->first();
+            if (!$deleteuser) {
                 return response()->json(['error' => 'User not found'], 404);
             }
 
             // Delete the user
-            $user->delete();
+            $deleteuser->delete();
 
             // Remove any associations in the offer_user table
             DB::table('offer_user')->where('user_unique_id', $uniqueId)->delete();
-
+            $user = Auth::user();
+            $notificationSerive->clickConversoin($user->unique_id, '');
         } catch (\Exception $e) {
             return response()->json(['error' => 'Something went wrong', 'message' => $e->getMessage()], 500);
         }

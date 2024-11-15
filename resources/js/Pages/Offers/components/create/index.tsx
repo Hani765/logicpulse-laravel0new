@@ -6,65 +6,149 @@ import { useState } from "react";
 import Step1 from "./steps/Step1";
 import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
-import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "@inertiajs/react";
+import Stepper from "@/components/ui/stepper";
+import Step4 from "./steps/Step4";
+import Step5 from "./steps/Step5";
+import { toast } from "sonner";
 
 export default function Index({ auth }: PageProps) {
     const [currentStep, setCurrentStep] = useState(1);
-    const [formData, setFormData] = useState({
-        offer_url: "",
-        offer_title: "",
-        network: "",
-        targetCountries: "",
+    const [showMeta, setShowMeta] = useState(false);
+    const [dataFetched, setDataFetched] = useState(false);
+    const [userDataFetched, setUserDataFetched] = useState(false);
+    const role = auth.user.role;
+    const [fetchedData, setFetchedData] = useState({
+        domains: [],
+        networks: [],
+        categories: [],
     });
-
-    const lastStep = 3;
+    const [fetchedUsersData, setFetchedUsersData] = useState({
+        users: [],
+        countries: [],
+    });
+    const { post, processing, data, setData, errors, reset } = useForm({
+        main_url: "",
+        title: "",
+        description: "",
+        keywords: "",
+        image: "",
+        age: "",
+        rate: "",
+        encryption: "",
+        network_id: "",
+        domain_id: "",
+        category_id: "",
+        proxy: "",
+        details: "",
+        users_ids: "",
+        countries: "",
+        status: "active",
+        appliableFor: "everyone",
+        urls: [{ url: "", deviceType: "all" }],
+    });
+    const submitOffer = async (event: React.FormEvent) => {
+        event.preventDefault();
+        post("/dashboard/offers", {
+            onSuccess: () => {
+                toast.success("Offer has been created!");
+                reset();
+            },
+            onError: () => {
+                toast.error(
+                    "An error occured while submitting form! Please check the form fields.",
+                );
+                setCurrentStep(1);
+            },
+        });
+    };
+    const lastStep = 5;
 
     const renderStep = () => {
         switch (currentStep) {
             case 1:
-                return <Step1 formData={formData} setFormData={setFormData} />;
+                return (
+                    <Step1
+                        formData={data}
+                        setFormData={setData}
+                        errors={errors}
+                        showMeta={showMeta}
+                        setShowMeta={setShowMeta}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                    />
+                );
             case 2:
-                return <Step2 formData={formData} setFormData={setFormData} />;
+                return (
+                    <Step2
+                        formData={data}
+                        setFormData={setData}
+                        errors={errors}
+                        dataFetched={dataFetched}
+                        setDataFetched={setDataFetched}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                        fetchedData={fetchedData}
+                        setFetchedData={setFetchedData}
+                    />
+                );
             case 3:
-                return <Step3 formData={formData} setFormData={setFormData} />;
+                return (
+                    <Step3
+                        formData={data}
+                        setFormData={setData}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                    />
+                );
+            case 4:
+                return (
+                    <Step4
+                        formData={data}
+                        setFormData={setData}
+                        errors={errors}
+                        userDataFetched={userDataFetched}
+                        setUserDataFetched={setUserDataFetched}
+                        currentStep={currentStep}
+                        setCurrentStep={setCurrentStep}
+                        fetchedUsersData={fetchedUsersData}
+                        setFetchedUsersData={setFetchedUsersData}
+                        role={role}
+                    />
+                );
+            case 5:
+                return (
+                    <Step5
+                        data={data}
+                        onClick={submitOffer}
+                        processing={processing}
+                        fetchedData={fetchedData}
+                        fetchedUsersData={fetchedUsersData}
+                    />
+                );
             default:
                 return null;
         }
     };
 
-    const handleSubmit = () => {
-        console.log("Form submitted with data:", formData);
-        toast.success("Offer created successfully!");
-    };
-
     const stepperItems = [
         "Basic Information",
         "Network Details",
+        "Additional Details",
         "Target Details",
+        "Review",
     ];
 
     return (
         <Authenticated user={auth.user}>
-            <div className="mt-4">
-                {/* Stepper */}
-                <div className="flex space-x-4">
-                    {stepperItems.map((item, index) => (
-                        <div
-                            key={index}
-                            className={`flex-1 text-center p-2 rounded ${
-                                currentStep - 1 === index
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-200"
-                            }`}
-                        >
-                            {item}
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="mt-6">
-                {/* Animated Step Content */}
+            <Stepper
+                stepperItems={stepperItems}
+                currentStep={currentStep}
+                setCurrentStep={setCurrentStep}
+                lastStep={lastStep}
+            />
+            <div className="mt-6 overflow-x-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentStep}
@@ -76,26 +160,6 @@ export default function Index({ auth }: PageProps) {
                         {renderStep()}
                     </motion.div>
                 </AnimatePresence>
-            </div>
-            <div className="flex w-full justify-end items-center mt-4">
-                {currentStep > 1 && (
-                    <Button
-                        onClick={() => setCurrentStep(currentStep - 1)}
-                        className="mr-2"
-                    >
-                        Back
-                    </Button>
-                )}
-                {currentStep < lastStep ? (
-                    <Button
-                        onClick={() => setCurrentStep(currentStep + 1)}
-                        className="mr-2"
-                    >
-                        Next
-                    </Button>
-                ) : (
-                    <SubmitBtn label="Create" processing={false} />
-                )}
             </div>
         </Authenticated>
     );

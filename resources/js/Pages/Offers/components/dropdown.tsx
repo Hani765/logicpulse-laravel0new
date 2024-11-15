@@ -7,6 +7,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
@@ -18,11 +19,12 @@ import {
     CredenzaTitle,
     CredenzaDescription,
 } from "@/components/ui/credenza";
-import { useForm } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
 import { toast } from "sonner";
 import { ReloadIcon } from "@radix-ui/react-icons";
-import Update from "./update/update";
 import { FaTrashAlt } from "react-icons/fa";
+import { FaPencil } from "react-icons/fa6";
+import { IoEyeOutline } from "react-icons/io5";
 
 interface DropdownProps {
     rowCurrent: any;
@@ -56,17 +58,40 @@ export default function Dropdown({ rowCurrent, role }: DropdownProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Update unique_id={unique_id} />
-                        {role === "admin" || role === "administrator" ? (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="py-1 w-full m-0 flex gap-4 text-red-600 hover:text-red-500"
-                                onClick={() => setDeleteOpen(true)}
+                        <DropdownMenuItem>
+                            <Link
+                                href={`offers/${unique_id}`}
+                                className="flex gap-4 items-center justify-center w-full py-1"
                             >
-                                Delete
-                                <FaTrashAlt size={11} />
-                            </Button>
+                                View
+                                <IoEyeOutline size={11} />
+                            </Link>
+                        </DropdownMenuItem>
+                        {role === "admin" || role === "administrator" ? (
+                            <>
+                                <DropdownMenuItem>
+                                    <a
+                                        href={`/dashboard/offers/${unique_id}/edit`}
+                                        className="flex gap-4 items-center justify-center w-full py-1"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Edit
+                                        <FaPencil size={11} />
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="py-1 w-full m-0 flex gap-4 text-red-600 hover:text-red-500"
+                                    onClick={() => setDeleteOpen(true)}
+                                >
+                                    Delete
+                                    <FaTrashAlt size={11} />
+                                </Button>
+                            </>
                         ) : null}
                     </DropdownMenuContent>
                 </DropdownMenu>

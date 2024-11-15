@@ -57,7 +57,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                             {menus.map(
                                 (
                                     { href, label, icon: Icon, submenus },
-                                    index
+                                    index,
                                 ) =>
                                     submenus.length === 0 ? (
                                         <div className="w-full" key={index}>
@@ -86,7 +86,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                                                         isOpen ===
                                                                             false
                                                                             ? "ml-2"
-                                                                            : "mr-4"
+                                                                            : "mr-4",
                                                                     )}
                                                                 >
                                                                     <Icon
@@ -94,7 +94,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                                                             isOpen ===
                                                                                 false
                                                                                 ? 16
-                                                                                : 18
+                                                                                : 18,
                                                                         )}
                                                                     />
                                                                 </span>
@@ -104,7 +104,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                                                         isOpen ===
                                                                             false
                                                                             ? "-translate-x-50 opacity-0"
-                                                                            : "translate-x-0 opacity-100"
+                                                                            : "translate-x-0 opacity-100",
                                                                     )}
                                                                 >
                                                                     {label}
@@ -132,7 +132,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                                 pathname={pathname}
                                             />
                                         </div>
-                                    )
+                                    ),
                             )}
                         </li>
                     ))}
@@ -147,7 +147,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                     >
                                         <span
                                             className={cn(
-                                                isOpen === false ? "" : "mr-4"
+                                                isOpen === false ? "" : "mr-4",
                                             )}
                                         >
                                             <LogOut size={18} />
@@ -157,7 +157,7 @@ export function Menu({ isOpen, role }: MenuProps) {
                                                 "whitespace-nowrap",
                                                 isOpen === false
                                                     ? "opacity-0 hidden"
-                                                    : "opacity-100"
+                                                    : "opacity-100",
                                             )}
                                         >
                                             Sign out

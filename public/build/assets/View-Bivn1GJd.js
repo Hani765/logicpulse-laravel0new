@@ -1,0 +1,2 @@
+import{j as e}from"./app-CkWx0ziT.js";import{C as r,a as s,b as i,f as n}from"./credenza-3netIWa9.js";import{P as t}from"./index-BtzfxFID.js";import"./dialog-CMYKyR97.js";import"./index-BI6CrKg2.js";function p({rowCurrent:a}){return e.jsxs(r,{children:[e.jsx(s,{className:"w-full",children:e.jsxs("p",{className:"w-full flex gap-4 items-center hover:bg-slate-50 justify-center py-1.5 rounded-md ",children:["View",e.jsx(t,{})]})}),e.jsx(i,{children:e.jsx(n,{children:"Close"})})]})}export{p as ViewDomain};
+//# sourceMappingURL=View-Bivn1GJd.js.map

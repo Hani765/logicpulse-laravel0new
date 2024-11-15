@@ -158,21 +158,22 @@ export function getMenuList(
         ],
     });
     if (role === "administrator") {
-        menuItems[0].menus.push({
-            href: "/dashboard/sources",
-            label: "Sources",
-            active: pathname === "/ dashboard/sources",
-            icon: IoShareSocialOutline,
-            submenus: [],
-        },
+        menuItems[0].menus.push(
+            {
+                href: "/dashboard/sources",
+                label: "Sources",
+                active: pathname === "/ dashboard/sources",
+                icon: IoShareSocialOutline,
+                submenus: [],
+            },
             {
                 href: "/dashboard/url-tester",
                 label: "Tester",
                 active: pathname === "/url-tester",
                 icon: Clipboard,
                 submenus: [],
-            },);
-
+            },
+        );
     }
 
     return menuItems;

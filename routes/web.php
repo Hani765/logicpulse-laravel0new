@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Authenticated\ClickController;
+use App\Http\Controllers\Authenticated\Dashboard\DashboardAnalytics;
 use App\Http\Controllers\Authenticated\Dashboard\DashboardMessage;
 use App\Http\Controllers\Authenticated\DomainController;
 use App\Http\Controllers\Authenticated\FetchController;
@@ -61,9 +62,9 @@ Route::middleware('auth')->group(function () {
         Route::Resources([
             "/dashboard/users" => UserController::class,
         ]);
-        Route::get("/fetch-users", [
+        Route::get("/dashboard/fetch/users", [
             UserController::class,
-            'get'
+            'fetchUsers'
         ]);
         Route::get('/fetch/users', [FetchController::class, 'fetchFilterUsers']);
         Route::get('/fetch/offers', [FetchController::class, 'fetchFilterOffers']);
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
         "/reports/clicks" => ClickController::class,
 
     ]);
+    Route::get('/dashboard/fetch/offers', [OffersController::class, 'fetchoffers']);
     Route::get('/fetch/clicks', [ClickController::class, 'fetchClicks']);
     Route::get('/fetch/countriesData', [FetchController::class, 'fetchFilterCountries']);
     Route::get('/fetch/categories', [FetchController::class, 'fetchFilterCategories']);
@@ -92,8 +94,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/click-conversion-count', [ClickController::class, 'getClickCount']);
 
     Route::get('/fetch-metadata', [MetadataController::class, 'fetchMetadata']);
+    Route::post('/upload/image', [MetadataController::class, 'uploadImage']);
     Route::get('/update/NotifcationSettings', [ProfileController::class, 'updateNotificationSettings']);
     Route::get('/get/message', [DashboardMessage::class, 'index']);
+    Route::get('/dashboard/analytics', [DashboardAnalytics::class, 'index']);
 });
 Route::get('/fetch-public-offers', [MarketPlaceController::class, 'fetchOffers']);
 

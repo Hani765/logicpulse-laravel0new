@@ -1,2 +1,0 @@
-import{j as t,B as r,R as i}from"./app-BOQZNA3r.js";import{R as m}from"./react-icons.esm-Bb_X1ijD.js";function d({processing:a,label:s,className:e,variant:n}){return t.jsx(r,{type:"submit",disabled:a,variant:n||"default",className:e,children:a?t.jsxs(i.Fragment,{children:[t.jsx(m,{className:"mr-2 h-4 w-4 animate-spin"}),"Processing..."]}):t.jsx(t.Fragment,{children:s})})}export{d as S};
-//# sourceMappingURL=SubmitBtn-BvGcnKlA.js.map

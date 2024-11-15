@@ -8,36 +8,31 @@ import { Table } from "@tanstack/react-table";
 import PerPage from "./PerPage";
 import { Button } from "../ui/button";
 import { TasksTableFloatingBar } from "./tasks-table-floating-bar";
+import { useEffect, useState } from "react";
+import useSearchParams from "@/hooks/useSearchParams";
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>;
     pagination: any;
-    onUrlChange: (url: string) => void; // Define the type for onUrlChange
-    endPoint: string;
 }
 
 export function DataTablePagination<TData>({
     table,
     pagination,
-    endPoint,
-    onUrlChange,
 }: DataTablePaginationProps<TData>) {
     const selectedRows = table.getFilteredSelectedRowModel().rowsById;
+    const [page, setPage] = useState("");
+    const { currentValue } = useSearchParams("page", page);
 
-    const handlePageChange = (newPage: number) => {
+    const handlePageChange = (newPage: string) => {
         // Create a URLSearchParams object to manipulate the URL's query parameters
-        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
-
-        // Set or update the 'page' parameter
-        urlParams.set("page", newPage.toString());
-
-        // Rebuild the full URL (ensure there's only one '?')
-        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
-
-        // Update the URL
-        onUrlChange(updatedUrl);
+        setPage(newPage);
     };
-
+    useEffect(() => {
+        if (currentValue) {
+            setPage(currentValue);
+        }
+    }, [currentValue]);
     return (
         <div className="flex items-center justify-between px-2 flex-col sm:flex-row">
             <div className="flex-1 text-sm text-muted-foreground">
@@ -50,7 +45,7 @@ export function DataTablePagination<TData>({
                 ) : null}
             </>
             <div className="flex items-center gap-2 mr-8 justify-between w-full sm:w-fit">
-                <PerPage onUrlChange={onUrlChange} endPoint={endPoint} />
+                <PerPage />
                 <div className="flex items-center space-x-2">
                     <p className="text-sm hidden sm:block">
                         Page {pagination.current_page} of {pagination.last_page}

@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->id();
             $table->string('user_id')->index();
             $table->string('unique_id')->index();
-            $table->string('offer_name')->index();
+            $table->string('title')->index();
             $table->string('image')->index();
             $table->string('network_id')->index();
             $table->string('domain_id')->index();
@@ -22,10 +22,12 @@ return new class extends Migration {
             $table->string('rate')->nullable();
             $table->string('encryption')->nullable();
             $table->text('urls');
-            $table->longText('details')->nullable();
+            $table->longText('description')->nullable();
+            $table->longText('keywords')->nullable();
             $table->longText('countries')->nullable();
             $table->string('proxy');
-            $table->string('status')->index();
+            $table->enum('status', ['active', 'inactive', 'paused'])->default('active');
+            $table->enum('appliableFor', ['everyone', 'admins', 'managers', 'users'])->default('everyone');
             $table->timestamps();
 
             // Adding foreign key constraint

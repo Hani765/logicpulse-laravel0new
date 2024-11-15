@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
@@ -19,16 +21,15 @@ import {
 } from "@/components/ui/credenza";
 import { useForm } from "@inertiajs/react";
 import { toast } from "sonner";
-import Update from "./update/update";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { FaTrashAlt } from "react-icons/fa";
+import { FaPencil } from "react-icons/fa6";
 
 interface DropdownProps {
     rowCurrent: any;
-    role: string;
 }
 
-export default function Dropdown({ rowCurrent, role }: DropdownProps) {
+export default function Dropdown({ rowCurrent }: DropdownProps) {
     const unique_id = rowCurrent.unique_id;
     const [deleteOpen, setDeleteOpen] = useState(false);
     const { processing, delete: destroy } = useForm();
@@ -54,7 +55,18 @@ export default function Dropdown({ rowCurrent, role }: DropdownProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Update role={role} unique_id={unique_id} />
+                        <DropdownMenuItem>
+                            <a
+                                href={`users/${unique_id}/edit`}
+                                className="flex gap-4 items-center justify-center w-full py-1"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Edit
+                                <FaPencil size={11} />
+                            </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <Button
                             variant="ghost"
                             size="sm"

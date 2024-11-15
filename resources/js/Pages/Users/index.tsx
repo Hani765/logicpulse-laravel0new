@@ -1,73 +1,72 @@
 import { DataTable } from "@/components/table";
-import Authenticated from "@/Layouts/AuthenticatedLayout";
-import { Head } from "@inertiajs/react";
-import Create from "./components/create/create";
+import { DomainsType, PageProps, User, UserType } from "@/types";
 import { Columns } from "./components/columns";
-import { useEffect, useState, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import debounce from "lodash/debounce";
-
-// Define types for API response
-interface FetchData {
-    data: any;
+import Authenticated from "@/Layouts/AuthenticatedLayout";
+import Create from "./components/create/create";
+import { Head } from "@inertiajs/react";
+import { useState } from "react";
+import useFetch from "@/hooks/usefetch";
+import { DataTableSkeleton } from "@/components/tableComponents/tableSkeleton";
+import { LucideServerCrash } from "lucide-react";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { PageChart } from "@/components/charts/page-chart";
+interface dataType {
+    data: UserType[];
     pagination: any;
+    chart_data: any[];
 }
-
-export default function Index({ auth }: { auth: any }) {
+export default function Index({ auth }: PageProps) {
+    const [url, setUrl] = useState(`/dashboard/fetch/users`);
+    const { data, isLoading, error } = useFetch<dataType>(url);
     const role = auth.user.role;
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [data, setData] = useState<FetchData | null>(null); // null if no data initially
-    const [url, setUrl] = useState<string>("/fetch-users");
-    const endPoint = "";
-
-    // Fetch users function with proper typing
-    const fetchUsers = async (queryUrl: string) => {
-        try {
-            setIsLoading(true);
-            const response = await fetch(queryUrl);
-            const users: FetchData = await response.json();
-            setData(users);
-        } catch (error) {
-            console.error("Error fetching users:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Debounced search function
-    const debouncedFetch = useCallback(
-        debounce((value: string) => {
-            setUrl(`/fetch-users?q=${value}`);
-        }, 500), // 500ms delay
-        [],
-    );
-
-    useEffect(() => {
-        fetchUsers(url);
-    }, [url]);
-
     return (
         <Authenticated user={auth.user}>
-            <Head title="Users" />
-            <div className="text-gray-600 dark:text-gray-200 text-sm mb-2">
-                <Create role={role} />
-            </div>
-
-            <Input
-                type="text"
-                placeholder="Search by name, email, or role"
-                onChange={(e) => debouncedFetch(e.target.value)} // Use debounced function here
-            />
-
-            {/* Loading state */}
-            {data && (
-                <DataTable
-                    data={data.data} // safely access user data
-                    endPoint={endPoint}
-                    columns={Columns(role)} // assuming Columns returns columns based on role
-                    pagination={data.pagination} // safely access pagination data
-                    isLoading={isLoading}
+            <Head title="Users">
+                <meta
+                    name="description"
+                    content=" Manage and track your users in one convenient
+                        location."
                 />
+            </Head>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-lg">Users</h2>
+                    <p className="text-sm text-gray-500 hidden sm:block">
+                        Manage and track your users in one convenient location.
+                    </p>
+                </div>
+                <DateRangePicker
+                    endPoint={url}
+                    onUrlChange={(url: string) => setUrl(url)}
+                />
+            </div>
+            {error ? (
+                <div className="min-h-72 mt-6 bg-white flex border flex-col border-gray-200 dark:border-gray-700 dark:bg-gray-900 w-full shadow-sm justify-center items-center px-2 rounded py-4 text-gray-100 dark:text-gray-600">
+                    <LucideServerCrash size={44} />
+                    <div>
+                        Something went wrong please try to refresh the page.
+                    </div>
+                </div>
+            ) : !data ? (
+                <DataTableSkeleton
+                    rowCount={8}
+                    columnCount={8}
+                    showViewOptions={false}
+                />
+            ) : (
+                <>
+                    <PageChart data={data?.chart_data} isLoading={isLoading} />
+                    <DataTable
+                        isLoading={isLoading}
+                        data={data.data}
+                        pagination={data.pagination}
+                        endPoint={url}
+                        columns={Columns()}
+                        onUrlChange={(url: string) => setUrl(url)}
+                        isPagination
+                        Create={Create}
+                    />
+                </>
             )}
         </Authenticated>
     );

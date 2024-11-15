@@ -27,7 +27,6 @@ export default function Accounts({
                 <AddValue error={error} />
                 <DataTable
                     data={data.data}
-                    isSearchable={true}
                     endPoint="123123"
                     columns={Columns(error)} // Assuming user has a token property
                     pagination={pagination_data}

@@ -10,8 +10,8 @@ use App\Models\Domain;
 use App\Models\Offers;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use App\Services\CreateNotificationService;
 use App\Services\MetricsService;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -19,24 +19,39 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class OffersController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    public function index(Request $request): Response
+    {
+        return Inertia::render('Offers/index', );
+    }
 
-
-    public function index(Request $request)
+    public function fetchoffers(Request $request)
     {
         $metricsService = new MetricsService();
-        $today = $metricsService->getTodayDateInUserTimezone();
+        // Get start_date and end_date from the request or set defaults (-7 days to today)
+        $start_date = $request->input('from')
+            ? $metricsService->convertToUserTimezone($request->input('from'))
+            : $metricsService->getTodayDateInUserTimezone();
+        $chart_start_date = $request->input('from')
+            ? $metricsService->convertToUserTimezone($request->input('from'))
+            : $metricsService->getDateInUserTimezone('-7 day');
+        $end_date = $request->input('to')
+            ? $metricsService->convertToUserTimezone($request->input('to'))
+            : $metricsService->getTodayDateInUserTimezone();
+        $start_date = Carbon::parse($start_date)->startOfDay(); // 2024-10-09 00:00:00
+        $chart_start_date = Carbon::parse($chart_start_date)->startOfDay(); // 2024-10-09 00:00:00
+        $end_date = Carbon::parse($end_date)->endOfDay(); // 2024-10-09 23:59:59
         $user = $metricsService->getUser();
-
-        $perPage = $request->input('per_page', 50); // Default to 50 items per page
+        $perPage = $request->input('per_page', 50);
         $page = $request->input('page', 1);
-        $q = $request->input('q', ''); // Get the search query from the request, default to empty string if not provided
-        $status = $request->input('status', ''); // Get the search query from the request, default to empty string if not provided
+        $q = $request->input('q', '');
+        $status = $request->input('status', '');// Get the search query from the request, default to empty string if not provided
 
         // Explicitly define the mapping of roles to column names
         $roleToColumnMap = [
@@ -56,16 +71,24 @@ class OffersController extends Controller
             $offersQuery = Offers::query();
         } elseif ($role === 'admin') {
             // Fetch offers where the offer's user_id matches the user's unique_id
-            $offersQuery = Offers::where('user_id', $user->unique_id);
+            $adminOffersQuery = Offers::where('user_id', $user->unique_id);
+
+            // Fetch offers where the admin's unique_id is found in the offer_user table
+            $offerUser = DB::table('offer_user')->where('user_unique_id', $user->unique_id)->first();
+            $offerUniqueIds = $offerUser ? explode(',', $offerUser->offer_unique_ids) : [];
+
+            // Merge both queries using union
+            $offersQuery = Offers::whereIn('unique_id', $offerUniqueIds)
+                ->union($adminOffersQuery);
         } else {
             // Fetch offers where the user's unique_id is in the user_unique_ids field (comma-separated)
             $offerUser = DB::table('offer_user')->where('user_unique_id', $user->unique_id)->first();
-
             $offerUniqueIds = $offerUser ? explode(',', $offerUser->offer_unique_ids) : [];
             $offersQuery = Offers::whereIn('unique_id', $offerUniqueIds);
         }
+
         if ($q) {
-            $offersQuery->where('offer_name', 'like', "%$q%");
+            $offersQuery->where('title', 'like', "%$q%");
         }
         if ($status) {
             $offersQuery->where('status', 'like', "%$status%");
@@ -77,25 +100,26 @@ class OffersController extends Controller
 
         foreach ($offers as $offer) {
             $metrics = $metricsService->getClicksAndConversions(
-                'domain',
+                'offer',
                 $offer->unique_id,
-                $today,
+                $start_date,
+                $end_date,
                 $clickColumn
             );
-
 
             // Fetch the domain value by domain_id
             $domain = Domain::where('unique_id', $offer->domain_id)->value('name');
 
             // Construct the URL
-            $url = $domain . 'redirect?p=' . $user->unique_id . '&o=' . $offer->id;
+            $url = $domain . '/redirect?p=' . $user->unique_id . '&o=' . $offer->id;
 
             // Set the limit for the combined offer name and countries to 100 characters
-            $offerName = Str::limit($offer->offer_name . $offer->countries, 40);
+            $offerName = Str::limit($offer->title . $offer->countries, 40);
 
             $response[] = [
                 'id' => $offer->id,
                 'unique_id' => $offer->unique_id,
+                'user_id' => $offer->user_id,
                 'name' => $offer->offer_name,
                 'nameWithCountries' => $offerName,
                 'age' => $offer->age,
@@ -103,12 +127,15 @@ class OffersController extends Controller
                 'clicks' => $metrics['clicks'],
                 'conversions' => $metrics['conversions'],
                 'cvr' => $metrics['cvr'],
+                'progress' => $metricsService->getProgressData('offer', $offer->unique_id, $clickColumn, ),
+
                 'url' => $url,
                 'status' => $offer->status,
                 'created_at' => $offer->created_at,
                 'updated_at' => $offer->updated_at,
             ];
         }
+        $chartData = $metricsService->getChartData('offer', $chart_start_date, $end_date, $clickColumn, );
         $paginationData = [
             'current_page' => $offers->currentPage(),
             'last_page' => $offers->lastPage(),
@@ -118,11 +145,12 @@ class OffersController extends Controller
             'next_page' => $offers->currentPage() < $offers->lastPage() ? $offers->currentPage() + 1 : null,
             'prev_page' => $offers->currentPage() > 1 ? $offers->currentPage() - 1 : null,
         ];
-        return Inertia::render('Offers/index', [
-            'user' => $user,
+        return response()->json([
             'data' => $response,
             'pagination' => $paginationData,
+            'chart_data' => $chartData,
         ]);
+
     }
 
     public function OfferReport(Request $request)
@@ -185,13 +213,18 @@ class OffersController extends Controller
     }
 
 
-
+    public function create()
+    {
+        return Inertia::render('Offers/components/create/index');
+    }
     /**
      * Store a newly created resource in storage.
      */
     public function store(OffersRequest $request)
     {
         $payload = $request->validated();
+        $notificationSerive = new CreateNotificationService();
+
         try {
             // Get the authenticated user
             $user = $request->user();
@@ -199,15 +232,6 @@ class OffersController extends Controller
             // Add the user_id and unique_id to the payload
             $payload['user_id'] = $user->unique_id;
             $payload['unique_id'] = Str::uuid();
-            // Convert 'urls' array to a JSON string or a comma-separated string
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = $payload['unique_id'] . '.' . $image->getClientOriginalExtension();
-                $imagePath = $image->storeAs('offers', $imageName, 'public');
-
-                // Store the path in the payload
-                $payload['image'] = 'storage/' . $imagePath;
-            }
 
             // Convert 'urls' array to a JSON string
             if (isset($payload['urls']) && is_array($payload['urls'])) {
@@ -239,7 +263,19 @@ class OffersController extends Controller
                         );
                 }
             }
+            $roles = '';
+            $message = 'A new offer has been added! Go to offers page and check it out.';
+            $user_ids = $request->users_ids;
 
+            if ($user->role !== 'administrator') {
+                $roles = 'administrator';
+                $message = $user->username . ' added a new Offer "' . $offer->title . '"';
+            }
+            Log::info($user_ids);
+            $notificationSerive->create($message, $user_ids, $roles);
+            $roles = 'administrator,admin';
+            $notificationSerive->clickConversoin($user_ids, $roles);
+            return redirect()->intended('/dashboard/offers');
         } catch (\Exception $err) {
             Log::info("Offer create error => " . $err->getMessage());
             return response()->json([
@@ -248,10 +284,7 @@ class OffersController extends Controller
         }
     }
 
-    public function create()
-    {
-        return Inertia::render('Offers/components/create/index');
-    }
+
 
     /**
      * Display the specified resource.
@@ -283,31 +316,60 @@ class OffersController extends Controller
             return response()->json(['error' => 'Something went wrong'], 500);
         }
     }
+    public function edit(string $unique_id)
+    {
+        $user = Auth::user();
+        $offer = Offers::where('unique_id', $unique_id)->first();
 
+        if ($offer) {
+            $user_id = $offer->user_id;
+            if ($user_id !== $user->unique_id) {
+                return response()->json(['error' => 'You dont have permission to edit that offer.'], 500);
+            }
+            // Fetch the user unique IDs related to the offer
+            $userIdsString = DB::table('offer_user')
+                ->whereRaw("FIND_IN_SET(?, offer_unique_ids)", [$offer->unique_id])
+                ->pluck('user_unique_id')
+                ->implode(',');
+
+
+            return Inertia::render('Offers/components/update/index', [
+                'offer' => $offer,
+                'users' => $userIdsString
+            ]);
+
+        } else {
+            // Return an error response if the offer is not found
+            return response()->json(['error' => 'Offer not found'], 404);
+        }
+    }
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $uniqueId)
     {
+        $notificationSerive = new CreateNotificationService();
         // Find the offer by unique ID
         $offer = Offers::where('unique_id', $uniqueId)->first();
 
         // Validate request data
         $payload = $request->validate([
-            'offer_name' => ['required', 'string', 'max:255', Rule::unique('offers', 'offer_name')->ignore($offer->id)],
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
+            'title' => ['required', 'string', 'max:255', Rule::unique('offers', 'title')->ignore($offer->id)],
+            'description' => 'required|string|max:3000|min:50',
+            'image' => 'nullable|string',
             'age' => 'required|integer|min:18',
             'rate' => 'required|numeric',
             'encryption' => 'nullable|string',
             'network_id' => 'required|string',
             'domain_id' => 'required|string',
             'category_id' => 'required|string',
-            'details' => 'nullable|string|max:255',
+            'keywords' => 'nullable|string|max:1000',
             'users_ids' => 'nullable|string',
             'urls' => 'array',
             'countries' => 'nullable|string',
             'proxy' => 'required|string',
-            'status' => 'required|string',
+            'status' => 'required|string|in:active,inactive,pause',
+            'appliableFor' => 'required|string|in:everyone,admins,managers,users',
         ]);
 
         try {
@@ -316,18 +378,6 @@ class OffersController extends Controller
                 return response()->json(['message' => 'Unauthenticated'], 401);
             }
 
-            // Handle image upload
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = $uniqueId . '.' . $image->getClientOriginalExtension();
-                $imagePath = $image->storeAs('offers', $imageName, 'public');
-
-                // Store the path in the payload
-                $payload['image'] = 'storage/' . $imagePath;
-            } else {
-                // Preserve existing image path if no new image is uploaded
-                $payload['image'] = $offer->image;
-            }
 
             // Encode 'urls' field if it is an array
             if (isset($payload['urls']) && is_array($payload['urls'])) {
@@ -379,6 +429,9 @@ class OffersController extends Controller
                         ->update(['offer_unique_ids' => $updatedOfferIds]);
                 }
             }
+            $user_ids = $request->users_ids;
+            $roles = 'administrator,admin';
+            $notificationSerive->clickConversoin($user_ids, $roles);
         } catch (\Exception $err) {
             return response()->json(['error' => 'Something went wrong', 'message' => $err->getMessage()], 500);
         }
@@ -390,6 +443,8 @@ class OffersController extends Controller
      */
     public function destroy(Request $request, $uniqueId)
     {
+        $notificationSerive = new CreateNotificationService();
+
         try {
             // Ensure the user is authenticated
             if (!Auth::check()) {
@@ -400,6 +455,8 @@ class OffersController extends Controller
 
             // Delete the domain
             $offer->delete();
+            $roles = 'administrator,admin';
+            $notificationSerive->clickConversoin('', $roles);
             // Return success response
         } catch (\Exception $err) {
             // Return error response if domain not found or deletion fails

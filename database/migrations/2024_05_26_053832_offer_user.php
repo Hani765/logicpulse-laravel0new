@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('offer_user', function (Blueprint $table) {
             $table->id();
             $table->string('user_unique_id');
-            $table->longText('offer_unique_ids'); // Long text to store multiple offer IDs
+            $table->longText('offer_unique_ids')->nullable(); // Long text to store multiple offer IDs
             $table->timestamps();
 
             // Foreign key constraints

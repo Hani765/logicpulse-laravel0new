@@ -1,0 +1,2 @@
+import{r,a1 as e,J as c,j as f}from"./app-CkWx0ziT.js";import{p}from"./play-audio-DP9JVqAd.js";const l=({user:s})=>{const i=s.unique_id,n=s.role;return r.useEffect(()=>{const t=[];return t.push(e.private(`notifications.${i}`)),t.push(e.private(`notifications.role.${n}`)),t.forEach(o=>{o.listen(".notification.sent",a=>{c.message("New message",{description:a.notification.message}),p()})}),()=>{t.forEach(o=>{o.stopListening(".notification.sent")})}},[i,n]),f.jsx("div",{})};export{l as default};
+//# sourceMappingURL=notify-B8WPPLZs.js.map

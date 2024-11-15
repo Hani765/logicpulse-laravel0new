@@ -23,7 +23,9 @@ class Offers extends Model
     protected $fillable = [
         'unique_id',
         'user_id',
-        'offer_name',
+        'title',
+        'description',
+        'keywords',
         'image',
         'age',
         'rate',
@@ -31,11 +33,11 @@ class Offers extends Model
         'network_id',
         'category_id',
         'domain_id',
-        'details',
         'countries',
         'urls',
         'proxy',
         'status',
+        'appliableFor',
     ];
 
     public function users()
@@ -52,6 +54,4 @@ class Offers extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
-
-
 }

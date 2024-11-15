@@ -8,7 +8,7 @@ interface ContentLayoutProps {
 
 export function ContentLayout({ children, user }: ContentLayoutProps) {
     return (
-        <div>
+        <div className="bg-gray-50 dark:bg-slate-950 rounded-none md:rounded-xl shadow-inner">
             <Navbar user={user} />
             <div className="w-full py-4 px-4">{children}</div>
         </div>

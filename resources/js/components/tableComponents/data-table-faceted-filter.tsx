@@ -1,6 +1,5 @@
+import { useEffect, useState } from "react";
 import { CheckIcon, PlusCircledIcon } from "@radix-ui/react-icons";
-import type { Column } from "@tanstack/react-table";
-
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,40 +18,31 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { useEffect, useState } from "react";
+import { statusOptions } from "@/lib/status-option";
+import useSearchParams from "@/hooks/useSearchParams";
 
-interface DataTableFacetedFilterProps<TData, TValue> {
-    endPoint: string;
-    onUrlChange: any;
+// Define the type for each status option
+interface StatusOption {
+    value: string;
+    label: string;
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
-    endPoint,
-    onUrlChange,
-}: DataTableFacetedFilterProps<TData, TValue>) {
-    const [filterValue, setFilterValue] = useState("");
-    const options = [
-        { value: "active", label: "Active" },
-        { value: "inactive", label: "Inactive" },
-        { value: "pending", label: "Pending" },
-        { value: "paused", label: "Paused" },
-    ];
-    const handleQueryChange = (query: string) => {
-        // Create a URLSearchParams object to manipulate the URL's query parameters
-        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
+// Define the props for the DataTableFacetedFilter component
+interface DataTableFacetedFilterProps<TData, TValue> {}
 
-        // Set or update the 'page' parameter
-        urlParams.set("status", query.toString());
+export function DataTableFacetedFilter<
+    TData,
+    TValue,
+>({}: DataTableFacetedFilterProps<TData, TValue>) {
+    const [filterValue, setFilterValue] = useState<string>("");
 
-        // Rebuild the full URL (ensure there's only one '?')
-        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
-
-        // Update the URL
-        onUrlChange(updatedUrl);
-    };
+    // Use the custom hook for managing query params
+    const { currentValue } = useSearchParams("status", filterValue);
     useEffect(() => {
-        handleQueryChange(filterValue);
-    }, [filterValue]);
+        if (currentValue) {
+            setFilterValue(currentValue);
+        }
+    }, [currentValue]);
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -63,7 +53,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 >
                     <PlusCircledIcon className="mr-2 size-4" />
                     Status
-                    {filterValue !== "" && (
+                    {filterValue && (
                         <>
                             <Separator
                                 orientation="vertical"
@@ -85,18 +75,16 @@ export function DataTableFacetedFilter<TData, TValue>({
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup className="max-h-[18.75rem] overflow-y-auto overflow-x-hidden">
-                            {options.map((option) => {
+                            {statusOptions.map((option: StatusOption) => {
                                 const isSelected = filterValue === option.value;
                                 return (
                                     <CommandItem
                                         key={option.value}
-                                        onSelect={() => {
-                                            if (isSelected) {
-                                                setFilterValue("");
-                                            } else {
-                                                setFilterValue(option.value);
-                                            }
-                                        }}
+                                        onSelect={() =>
+                                            setFilterValue(
+                                                isSelected ? "" : option.value,
+                                            )
+                                        }
                                     >
                                         <div
                                             className={cn(
@@ -116,7 +104,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                                 );
                             })}
                         </CommandGroup>
-                        {filterValue != "" && (
+                        {filterValue && (
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>

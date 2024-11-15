@@ -13,7 +13,6 @@ export default function index({ auth, data, pagination }: PageProps) {
             <div>
                 <DataTable
                     data={data}
-                    isSearchable={true}
                     endPoint="123"
                     columns={Columns()} // Assuming user has a token property
                     pagination={pagination}

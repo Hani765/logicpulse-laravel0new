@@ -1,13 +1,13 @@
-import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import Dropdown from "./dropdown";
 import { UserType } from "@/types";
 import ProfilePic from "@/components/ui/profile_pic";
+import { DataTableColumnHeader } from "@/components/tableComponents/data-table-column-header";
+import Status from "@/components/tableComponents/status";
+import Progress from "@/components/charts/table-chart";
 
-export const Columns = (role: string): ColumnDef<UserType>[] => [
+export const Columns = (): ColumnDef<UserType>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -35,23 +35,17 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
     {
         accessorKey: "id",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    ID
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="ID" />;
         },
         cell: (info) => info.row.index + 1,
     },
     {
         accessorKey: "profile_image",
-        header: "Profile Pic",
+        header: ({ column }) => {
+            return (
+                <DataTableColumnHeader column={column} title="Profile Pic" />
+            );
+        },
         cell: ({ row }) => {
             const path = String(row.getValue("profile_image"));
 
@@ -65,150 +59,74 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
     {
         accessorKey: "name",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Name" />;
         },
     },
     {
         accessorKey: "username",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Username
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Username" />;
         },
     },
     {
         accessorKey: "email",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Email
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Email" />;
         },
     },
     {
         accessorKey: "phone",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Phone
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Phonr" />;
         },
     },
     {
         accessorKey: "age",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Age
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Age" />;
         },
     },
     {
         accessorKey: "rate",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Rate
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Rate" />;
         },
     },
     {
         accessorKey: "clicks",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Clicks
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Clicks" />;
         },
     },
     {
         accessorKey: "conversions",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Conversions
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <DataTableColumnHeader column={column} title="Conversions" />
             );
         },
     },
     {
         accessorKey: "cvr",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    CVR
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="CVR" />;
+        },
+    },
+    {
+        accessorKey: "progress",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Progress" />
+        ),
+        cell: ({ row }) => {
+            const progress = row.getValue("progress");
+            return <Progress progress={progress} />;
         },
     },
     {
         accessorKey: "role",
-        header: "Role",
+        header: ({ column }) => {
+            return <DataTableColumnHeader column={column} title="Role" />;
+        },
         cell: ({ row }) => {
             const role = String(row.getValue("role"));
             return (
@@ -226,15 +144,23 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
     },
     {
         accessorKey: "manager_username",
-        header: "Manager is",
+        header: ({ column }) => {
+            return (
+                <DataTableColumnHeader column={column} title="Manager Name" />
+            );
+        },
     },
     {
         accessorKey: "admin_username",
-        header: "Admin is",
+        header: ({ column }) => {
+            return <DataTableColumnHeader column={column} title="Admin Name" />;
+        },
     },
     {
         accessorKey: "created_at",
-        header: "Create At",
+        header: ({ column }) => {
+            return <DataTableColumnHeader column={column} title="Create At" />;
+        },
         cell: ({ row }) => {
             const date = new Date(row.getValue("created_at"));
             const formated = date.toLocaleDateString();
@@ -243,7 +169,9 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
     },
     {
         accessorKey: "updated_at",
-        header: "Updated At",
+        header: ({ column }) => {
+            return <DataTableColumnHeader column={column} title="Update At" />;
+        },
         cell: ({ row }) => {
             const date = new Date(row.getValue("updated_at"));
             const formated = date.toLocaleDateString();
@@ -253,31 +181,11 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
     {
         accessorKey: "status",
         header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Status
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            );
+            return <DataTableColumnHeader column={column} title="Status" />;
         },
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
-            return (
-                <>
-                    {status === "active" ? (
-                        <div className="text-green-500">Active</div>
-                    ) : status === "paused" ? (
-                        <div className="text-blue-500">Paused</div>
-                    ) : (
-                        <div className="text-red-500">Inactive</div>
-                    )}
-                </>
-            );
+            return <Status status={status} />;
         },
     },
     {
@@ -285,7 +193,7 @@ export const Columns = (role: string): ColumnDef<UserType>[] => [
         id: "actions",
         cell: ({ row }) => {
             const rowCurrent = row.original;
-            return <Dropdown rowCurrent={rowCurrent} role={role} />;
+            return <Dropdown rowCurrent={rowCurrent} />;
         },
     },
 ];

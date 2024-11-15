@@ -1,0 +1,2 @@
+import{r as n}from"./app-CkWx0ziT.js";import{u as c,g as f,M as i,b as p,h as m,f as l}from"./proxy-D3ZUg4-_.js";function h(s){const t=c(()=>f(s)),{isStatic:o}=n.useContext(i);if(o){const[,e]=n.useState(s);n.useEffect(()=>t.on("change",e),[])}return t}function g(s,t){const o=h(t()),e=()=>o.set(t());return e(),p(()=>{const u=()=>l.preRender(e,!1,!0),r=s.map(a=>a.on("change",u));return()=>{r.forEach(a=>a()),m(e)}}),o}export{h as a,g as u};
+//# sourceMappingURL=use-combine-values-DXlfacMq.js.map

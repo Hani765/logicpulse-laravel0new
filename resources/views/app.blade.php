@@ -10,7 +10,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
+    <link rel="icon" type="image/x-icon" href="/assets/flogicpulse256.png">
     <!-- Scripts -->
     @routes
     @viteReactRefresh
@@ -18,7 +18,7 @@
     @inertiaHead
 </head>
 
-<body class="font-sans antialiased bg-gray-50 dark:bg-slate-950">
+<body class="font-sans antialiased dark:bg-gray-900 bg-white">
     @inertia
 </body>
 

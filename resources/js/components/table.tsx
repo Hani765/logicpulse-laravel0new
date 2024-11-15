@@ -26,10 +26,9 @@ interface DataTableProps<TData, TValue> {
     data: TData[];
     pagination?: any;
     isLoading?: boolean;
-    endPoint: string;
-    onUrlChange?: any;
     tableViewOption?: boolean;
     isPagination?: true;
+    LeftTable?: any;
     Create?: any;
 }
 
@@ -37,10 +36,9 @@ export function DataTable<TData extends { status: string }, TValue>({
     columns,
     data,
     pagination,
-    endPoint,
     isLoading,
-    onUrlChange,
     isPagination,
+    LeftTable,
     Create,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -71,9 +69,8 @@ export function DataTable<TData extends { status: string }, TValue>({
             <div className="flex items-center py-3">
                 <DataTableToolbar
                     table={table}
+                    LeftTable={LeftTable}
                     Create={Create}
-                    endPoint={endPoint}
-                    onUrlChange={onUrlChange}
                 />
             </div>
 
@@ -167,8 +164,6 @@ export function DataTable<TData extends { status: string }, TValue>({
                     <DataTablePagination
                         table={table}
                         pagination={pagination}
-                        endPoint={endPoint}
-                        onUrlChange={onUrlChange}
                     />
                 </div>
             )}

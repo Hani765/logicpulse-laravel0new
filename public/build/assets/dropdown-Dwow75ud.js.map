@@ -1,0 +1,1 @@
+{"version":3,"file":"dropdown-Dwow75ud.js","sources":["../../../resources/js/Pages/Reports/clicks/components/dropdown.tsx"],"sourcesContent":["import React from \"react\";\n\nexport default function dropdown() {\n    return <div></div>;\n}\n"],"names":["dropdown"],"mappings":"sCAEA,SAAwBA,GAAW,CAC/B,aAAQ,MAAI,EAAA,CAChB"}

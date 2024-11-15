@@ -1,10 +1,8 @@
 "use client";
-
-import * as React from "react";
+import React, { useEffect, useState } from "react";
 import { CalendarIcon } from "@radix-ui/react-icons";
-import { format, subDays } from "date-fns"; // Importing format and subDays
+import { format, subDays } from "date-fns";
 import { type DateRange } from "react-day-picker";
-
 import { cn } from "@/lib/utils";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,6 +11,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import useSearchParams from "@/hooks/useSearchParams";
 
 // Utility function to get default date range (last 7 days)
 const getDefaultDateRange = (): DateRange => {
@@ -27,8 +26,6 @@ interface DateRangePickerProps {
     triggerVariant?: Exclude<ButtonProps["variant"], "destructive" | "link">;
     triggerSize?: Exclude<ButtonProps["size"], "icon">;
     triggerClassName?: string;
-    endPoint: string;
-    onUrlChange: (url: string) => void;
 }
 
 export function DateRangePicker({
@@ -36,36 +33,30 @@ export function DateRangePicker({
     triggerVariant = "outline",
     triggerSize = "default",
     triggerClassName,
-    endPoint,
-    onUrlChange,
 }: DateRangePickerProps) {
-    const [selectedDateRange, setSelectedDateRange] = React.useState<DateRange>(
+    const [selectedDateRange, setSelectedDateRange] = useState<DateRange>(
         getDefaultDateRange(),
     );
+
+    const [from, setFrom] = useState("");
+    const [to, setTo] = useState("");
+    const { currentValue: currentFromValue } = useSearchParams("from", from); // Retrieve "from" param value
+    const { currentValue: currentToValue } = useSearchParams("to", to); // Retrieve "to" param value
 
     // Helper function to format date to YYYY-MM-DD
     const formatDate = (date: Date | undefined) =>
         date ? format(date, "yyyy-MM-dd") : "";
 
-    // Function to handle query change and update the URL with formatted date range
+    // Function to update URL when the date range changes
     const handleQueryChange = (newDateRange: DateRange | undefined) => {
-        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
-
+        // Update or delete "from" and "to" query parameters
         if (newDateRange?.from) {
-            urlParams.set("from", formatDate(newDateRange.from)); // Format to YYYY-MM-DD
-        } else {
-            urlParams.delete("from");
+            setFrom(formatDate(newDateRange.from));
         }
 
         if (newDateRange?.to) {
-            urlParams.set("to", formatDate(newDateRange.to)); // Format to YYYY-MM-DD
-        } else {
-            urlParams.delete("to");
+            setTo(formatDate(newDateRange.to));
         }
-
-        // Rebuild and update the URL
-        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
-        onUrlChange(updatedUrl);
     };
 
     // Function to reset the date range to default (previous 7 days)
@@ -74,6 +65,15 @@ export function DateRangePicker({
         setSelectedDateRange(defaultRange);
         handleQueryChange(defaultRange); // Update URL with default date range
     };
+
+    useEffect(() => {
+        if (currentFromValue) {
+            setFrom(currentFromValue);
+        }
+        if (currentToValue) {
+            setTo(currentToValue);
+        }
+    }, [currentFromValue, currentToValue]);
 
     return (
         <div className="w-fit">
@@ -115,8 +115,8 @@ export function DateRangePicker({
                         selected={selectedDateRange}
                         onSelect={(newDateRange) => {
                             if (newDateRange) {
-                                setSelectedDateRange(newDateRange); // Only update state if newDateRange is defined
-                                handleQueryChange(newDateRange);
+                                setSelectedDateRange(newDateRange); // Update state with new range
+                                handleQueryChange(newDateRange); // Update URL
                             }
                         }}
                         numberOfMonths={2}
@@ -125,7 +125,7 @@ export function DateRangePicker({
                         variant="outline"
                         size="sm"
                         onClick={resetToDefaultDateRange}
-                        className="w-full "
+                        className="w-full"
                     >
                         Clear
                     </Button>

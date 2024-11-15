@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Select,
     SelectContent,
@@ -7,33 +7,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import useSearchParams from "@/hooks/useSearchParams";
 
-export default function PerPage({
-    onUrlChange,
-    endPoint,
-}: {
-    endPoint: string;
-    onUrlChange: (url: string) => void;
-}) {
-    // Handle the per_page change
-    const handlePageChange = (per_page: number) => {
-        // Create a URLSearchParams object to manipulate the URL's query parameters
-        const urlParams = new URLSearchParams(endPoint.split("?")[1]);
-
-        // Set or update the 'per_page' parameter
-        urlParams.set("per_page", per_page.toString());
-
-        // Rebuild the full URL with updated 'per_page' query
-        const updatedUrl = `${endPoint.split("?")[0]}?${urlParams.toString()}`;
-
-        // Call the onUrlChange handler with the updated URL
-        onUrlChange(updatedUrl);
-    };
-
+export default function PerPage() {
+    const [perpage, setPerPage] = useState("");
+    const { currentValue } = useSearchParams("per_page", perpage);
+    useEffect(() => {
+        if (currentValue) {
+            setPerPage(currentValue);
+        }
+    }, [currentValue]);
     return (
         <div className="flex gap-2 items-center flex-col sm:flex-row">
             <p className="text-sm font-medium">Rows per page</p>
-            <Select onValueChange={(value) => handlePageChange(Number(value))}>
+            <Select onValueChange={(value) => setPerPage(value)}>
                 <SelectTrigger className="h-6 w-[100px]">
                     <SelectValue placeholder="Select" />
                 </SelectTrigger>

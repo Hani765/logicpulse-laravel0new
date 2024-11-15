@@ -19,6 +19,7 @@ export const LabelInputContainer = ({
     description,
     errorMessage,
     successMessage,
+    bottomMessage,
     disabled,
     required,
     helperText,
@@ -35,6 +36,7 @@ export const LabelInputContainer = ({
     label?: string;
     description?: string;
     errorMessage?: string;
+    bottomMessage?: string;
     successMessage?: string;
     disabled?: boolean;
     required?: boolean;
@@ -81,6 +83,9 @@ export const LabelInputContainer = ({
             )}
             {successMessage && (
                 <p className="text-sm text-green-500">{successMessage}</p>
+            )}
+            {bottomMessage && (
+                <p className="text-sm text-gray-500">{bottomMessage}</p>
             )}
         </div>
     );

@@ -7,15 +7,18 @@ export default function SubmitBtn({
     label,
     className,
     variant,
+    onClick,
 }: {
     processing: any;
     label: string;
     className?: string;
     variant?: any;
+    onClick?: any;
 }) {
     return (
         <Button
-            type="submit"
+            onClick={onClick}
+            type={onClick ? "button" : "submit"}
             disabled={processing}
             variant={variant || "default"}
             className={className}
